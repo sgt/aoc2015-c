@@ -19,15 +19,15 @@ typedef struct {
   size_t cap;
 } _ArrHeader;
 
-static long *_arr_create() {
-  void *hdr = malloc(sizeof(_ArrHeader) + sizeof(long) * ARR_INITIAL_CAP);
-  *(_ArrHeader *)hdr = (_ArrHeader){.len = 0, .cap = ARR_INITIAL_CAP};
+static long *_arr_create(size_t initial_cap) {
+  void *hdr = malloc(sizeof(_ArrHeader) + sizeof(long) * initial_cap);
+  *(_ArrHeader *)hdr = (_ArrHeader){.len = 0, .cap = initial_cap};
   return (long *)((char *)hdr + sizeof(_ArrHeader));
 }
 
 static _ArrHeader *_arr_header(long **arr) {
   if (*arr == NULL) {
-    *arr = _arr_create();
+    *arr = _arr_create(ARR_INITIAL_CAP);
   }
   return (_ArrHeader *)((char *)(*arr) - sizeof(_ArrHeader));
 }
@@ -47,17 +47,17 @@ static long *arr_push(long **arr, long elem) {
                                 sizeof(_ArrHeader) + hdr->cap * sizeof(long));
   }
   *arr = (long *)((char *)hdr + sizeof(_ArrHeader));
-  hdr->len++;
-  (*arr)[hdr->len - 1] = elem;
-  return &(*arr)[hdr->len - 1];
+  long *ptr = &(*arr)[hdr->len++];
+  *ptr = elem;
+  return ptr;
 }
 
 static long arr_pop(long **arr) {
   _ArrHeader *hdr = _arr_header(arr);
-  if (hdr->len == 0) {
-    return 0;
-  }
-  long elem = (*arr)[hdr->len - 1];
-  hdr->len--;
-  return elem;
+  return hdr->len ? (*arr)[--hdr->len] : 0;
+}
+
+static long arr_last(long **arr) {
+  _ArrHeader *hdr = _arr_header(arr);
+  return hdr->len ? (*arr)[hdr->len - 1] : 0;
 }

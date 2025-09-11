@@ -10,7 +10,7 @@ void test_dynamic_array(void) {
   TEST_CHECK(list[123] == 124);
   TEST_CHECK(arr_pop(&list) == 200);
   TEST_CHECK(arr_pop(&list) == 199);
-  // TEST_CHECK(arr_last(list) == 198);
+  TEST_CHECK(arr_last(&list) == 198);
   TEST_CHECK(arr_len(&list) == 198);
   arr_free(&list);
   TEST_CHECK(list == NULL);
