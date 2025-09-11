@@ -6,6 +6,8 @@ cc := 'clang'
 src_dir := 'src'
 main := src_dir / 'main.c'
 test_main := src_dir / 'test.c'
+strip_flags := if os() == "windows" {""} else {"-Wl,-s"}
+release_flags := "-O3 " + strip_flags
 
 cc_flags := '-D_CRT_SECURE_NO_WARNINGS'
 
@@ -15,7 +17,7 @@ build-command arg_flags:
 
 build: (build-command "-g")
 
-build-release: (build-command '-O3')
+build-release: (build-command release_flags)
 
 run day:
     {{exe}} {{day}}
