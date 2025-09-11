@@ -13,7 +13,7 @@ cc_flags := '-D_CRT_SECURE_NO_WARNINGS'
 build-command arg_flags:
     {{cc}} {{cc_flags}} {{arg_flags}} -o {{exe}} {{main}}
 
-build: (build-command "")
+build: (build-command "-g")
 
 build-release: (build-command '-O3')
 
@@ -21,5 +21,5 @@ run day:
     {{exe}} {{day}}
 
 test:
-    {{cc}} {{cc_flags}} -o {{test_exe}} {{test_main}}
+    {{cc}} {{cc_flags}} -g -o {{test_exe}} {{test_main}}
     {{test_exe}}
