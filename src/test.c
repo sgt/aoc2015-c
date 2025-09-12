@@ -35,15 +35,25 @@ void test_dynamic_array(void) {
   TEST_CHECK(list == NULL);
 }
 
-typedef struct {
-  int x, y;
-} vec;
-
 void test_hashtable(void) {
+  typedef struct {
+    int x, y;
+  } pair;
   struct {
-    vec key;
+    pair key;
     int value;
   } *m = NULL;
+  for (int i = 1; i <= 200; i++) {
+    ht_put(m, ((pair){i, i * 2}), i * 3);
+  }
+  TEST_CHECK(ht_size(m) == 200);
+  TEST_CHECK(ht_has(m, ((pair){20, 40})));
+  TEST_CHECK(!ht_has(m, ((pair){20, 4})));
+  TEST_CHECK(ht_get(m, ((pair){30, 60})) == 90);
+  ht_free(m);
+  TEST_CHECK(m == NULL);
 }
 
-TEST_LIST = {{"dynamic array", test_dynamic_array}, {NULL, NULL}};
+TEST_LIST = {{"dynamic array", test_dynamic_array},
+             {"test hashtable", test_hashtable},
+             {NULL, NULL}};
