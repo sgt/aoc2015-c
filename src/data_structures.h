@@ -1,8 +1,8 @@
 /*
 Toy data structures that I implemented just for the fun of it.
 
-For real purposes, use Sean Barret's stb_ds.h (by which this toy code is
-inspired).
+For real purposes, use Sean Barret's stb_ds.h (which this toy code is inspired
+by).
 
 For usage examples, see test.c
 */
@@ -19,45 +19,42 @@ typedef struct {
   size_t cap;
 } _ArrHeader;
 
-static long *_arr_create(size_t initial_cap) {
-  void *hdr = malloc(sizeof(_ArrHeader) + sizeof(long) * initial_cap);
-  *(_ArrHeader *)hdr = (_ArrHeader){.len = 0, .cap = initial_cap};
-  return (long *)((char *)hdr + sizeof(_ArrHeader));
-}
+#define _arr_header(arr) ((_ArrHeader *)(arr) - 1)
 
-static _ArrHeader *_arr_header(long **arr) {
-  if (*arr == NULL) {
-    *arr = _arr_create(ARR_INITIAL_CAP);
+#define _arr_grow_if_needed(arr)                                               \
+  {                                                                            \
+    _ArrHeader *hdr;                                                           \
+    if (arr) {                                                                 \
+      hdr = _arr_header(arr);                                                  \
+      if (hdr->len == hdr->cap) {                                              \
+        hdr->cap *= ARR_GROW_FACTOR;                                           \
+        hdr = (_ArrHeader *)realloc(hdr, sizeof(_ArrHeader) +                  \
+                                             hdr->cap * sizeof(long));         \
+      }                                                                        \
+    } else {                                                                   \
+      hdr = malloc(sizeof(_ArrHeader) +                                        \
+                   sizeof(typeof(*(arr))) * ARR_INITIAL_CAP);                  \
+      *hdr = (_ArrHeader){.len = 0, .cap = ARR_INITIAL_CAP};                   \
+    }                                                                          \
+    (arr) = (typeof(arr))(hdr + 1);                                            \
   }
-  return (_ArrHeader *)((char *)(*arr) - sizeof(_ArrHeader));
-}
 
-static size_t arr_len(long **arr) { return _arr_header(arr)->len; }
+#define arr_len(arr) ((arr) ? _arr_header(arr)->len : 0)
 
-static void arr_free(long **arr) {
-  free(_arr_header(arr));
-  *arr = NULL;
-}
-
-static long *arr_push(long **arr, long elem) {
-  _ArrHeader *hdr = _arr_header(arr);
-  if (hdr->len == hdr->cap) {
-    hdr->cap *= ARR_GROW_FACTOR;
-    hdr = (_ArrHeader *)realloc(hdr,
-                                sizeof(_ArrHeader) + hdr->cap * sizeof(long));
+#define arr_free(arr)                                                          \
+  {                                                                            \
+    if (arr) {                                                                 \
+      free(_arr_header(arr));                                                  \
+    }                                                                          \
+    (arr) = NULL;                                                              \
   }
-  *arr = (long *)((char *)hdr + sizeof(_ArrHeader));
-  long *ptr = &(*arr)[hdr->len++];
-  *ptr = elem;
-  return ptr;
-}
 
-static long arr_pop(long **arr) {
-  _ArrHeader *hdr = _arr_header(arr);
-  return hdr->len ? (*arr)[--hdr->len] : 0;
-}
+#define arr_push(arr, val)                                                     \
+  {                                                                            \
+    _arr_grow_if_needed(arr);                                                  \
+    (arr)[_arr_header(arr)->len++] = (val);                                    \
+  }
 
-static long arr_last(long **arr) {
-  _ArrHeader *hdr = _arr_header(arr);
-  return hdr->len ? (*arr)[hdr->len - 1] : 0;
-}
+#define arr_pop(arr) (arr)[--(_arr_header(arr)->len)]
+
+#define arr_last(arr) (arr)[_arr_header(arr)->len - 1]
