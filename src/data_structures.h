@@ -29,14 +29,14 @@ typedef struct {
       if (hdr->len == hdr->cap) {                                              \
         hdr->cap *= ARR_GROW_FACTOR;                                           \
         hdr = (_ArrHeader *)realloc(hdr, sizeof(_ArrHeader) +                  \
-                                             hdr->cap * sizeof(long));         \
+                                             hdr->cap * sizeof(*(arr)));       \
       }                                                                        \
     } else {                                                                   \
       hdr = malloc(sizeof(_ArrHeader) +                                        \
-                   sizeof(typeof(*(arr))) * ARR_INITIAL_CAP);                  \
+                   sizeof(*(arr)) * ARR_INITIAL_CAP);                         \
       *hdr = (_ArrHeader){.len = 0, .cap = ARR_INITIAL_CAP};                   \
     }                                                                          \
-    (arr) = (typeof(arr))(hdr + 1);                                            \
+    (arr) = (void *)(hdr + 1);                                                 \
   }
 
 #define arr_len(arr) ((arr) ? _arr_header(arr)->len : 0)
