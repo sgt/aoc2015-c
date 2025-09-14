@@ -1,6 +1,7 @@
 #include "../thirdparty/acutest.h"
 
 #include "data_structures.h"
+#include <stdint.h>
 
 #define TEST_DYN_ARRAY(type)                                                   \
   {                                                                            \
@@ -19,13 +20,13 @@
 
 void test_dynamic_array(void) {
   TEST_DYN_ARRAY(float);
-  TEST_DYN_ARRAY(long)
+  TEST_DYN_ARRAY(uint32_t)
 
   typedef struct {
-    long x, y;
+    uint32_t x, y;
   } pair;
   pair *list = NULL;
-  for (long i = 1; i <= 200; i++) {
+  for (uint32_t i = 1; i <= 200; i++) {
     arr_push(list, ((pair){.x = i, .y = i * 2}));
   }
   TEST_CHECK(list[123].x == 124 && list[123].y == 248);

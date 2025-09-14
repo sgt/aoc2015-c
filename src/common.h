@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,11 +15,11 @@ typedef struct {
   const char *sep;
 } splitter;
 
-static splitter splitter_new(const char *input, const char *sep) {
+splitter splitter_new(const char *input, const char *sep) {
   return (splitter){input, sep};
 }
 
-static bool splitter_next(splitter *s, size_t token_size, char *token) {
+bool splitter_next(splitter *s, size_t token_size, char *token) {
   if (*s->input == '\0') {
     return false;
   }
@@ -33,15 +34,15 @@ static bool splitter_next(splitter *s, size_t token_size, char *token) {
   return true;
 }
 
-static bool str2long(const char *str, long *result) {
+bool str2uint32(const char *str, uint32_t *result) {
   char *p_end;
   *result = strtol(str, &p_end, 10);
   return *p_end == '\0';
 }
 
-static int _compare_longs(const void *a, const void *b) {
-  const long arg1 = *(const long *)a;
-  const long arg2 = *(const long *)b;
+int _compare_uint32(const void *a, const void *b) {
+  const uint32_t arg1 = *(const uint32_t *)a;
+  const uint32_t arg2 = *(const uint32_t *)b;
   if (arg1 < arg2)
     return -1;
   if (arg1 > arg2)
@@ -49,6 +50,6 @@ static int _compare_longs(const void *a, const void *b) {
   return 0;
 }
 
-static void sort_longs(long *arr, size_t size) {
-  qsort(arr, size, sizeof(long), _compare_longs);
+void sort_uint32_array(uint32_t *arr, size_t size) {
+  qsort(arr, size, sizeof(uint32_t), _compare_uint32);
 }

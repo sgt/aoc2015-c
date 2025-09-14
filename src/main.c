@@ -12,8 +12,8 @@ int main(const int argc, const char *argv[]) {
     return 1;
   }
 
-  long n;
-  bool ok = str2long(argv[1], &n);
+  uint32_t n;
+  bool ok = str2uint32(argv[1], &n);
   if (!ok) {
     puts("argument must be a number");
     return 1;
@@ -25,11 +25,11 @@ int main(const int argc, const char *argv[]) {
     printf("1.2: %zu\n", day1_part2());
     break;
   case 2:
-    printf("2.1: %ld\n", day2_part1());
-    printf("2.2: %ld\n", day2_part2());
+    printf("2.1: %d\n", day2_part1());
+    printf("2.2: %d\n", day2_part2());
     break;
   default:
-    printf("there is no problem %lu\n", n);
+    printf("there is no problem %d\n", n);
   }
 
   return 0;
