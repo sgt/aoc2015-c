@@ -75,9 +75,9 @@ typedef struct {
 } _HTHeader;
 
 typedef struct {
-  size_t hash;
+  uint64_t hash;
   ptrdiff_t idx;
-} _HTItem;
+} _HTBucket;
 
 // FNV hash
 uint64_t hash(void *data, size_t size) {
@@ -90,26 +90,40 @@ uint64_t hash(void *data, size_t size) {
   return hash;
 }
 
-size_t _ht_bucket_idx(size_t cap, void *key, size_t key_size) {
-  return hash(key, key_size) & (cap - 1);
-}
-
 // Create new empty hashtable.
 void *_ht_new(size_t cap) {
   // allocate header and items array right after the header
-  _HTHeader *hdr = malloc(sizeof(_HTHeader) + sizeof(_HTItem) * cap);
+  _HTHeader *hdr = malloc(sizeof(_HTHeader) + sizeof(_HTBucket) * cap);
   hdr->cap = cap;
-  _HTItem *items = (_HTItem *)(hdr + 1);
+  _HTBucket *buckets = (_HTBucket *)(hdr + 1);
   for (size_t i = 0; i < cap; i++) {
-    *(items + i) = (_HTItem){.hash = 0, .idx = -1};
+    *(buckets + i) = (_HTBucket){.hash = 0, .idx = -1};
   }
   return hdr;
 }
 
+inline size_t _ht_bucket_idx(_HTHeader *hdr, void *key, size_t key_size) {
+  return hash(key, key_size) & (hdr->cap - 1);
+}
+
+void _ht_put_in_bucket(_HTHeader *hdr, uint64_t hash, ptrdiff_t idx) {
+  _HTBucket *buckets = (_HTBucket *)(hdr + 1);
+  ptrdiff_t bucket_idx = hash & (hdr->cap - 1); // hash % cap
+  while (buckets[bucket_idx].idx != -1) {
+    // find unused bucket, wrapping at cap
+    if (++bucket_idx == hdr->cap) {
+      bucket_idx = 0;
+    }
+  }
+  buckets[bucket_idx] = (_HTBucket){.hash = hash, .idx = idx};
+}
+
+ptrdiff_t _ht_get_idx_from_bucket(_HTHeader *hdr, uint64_t hash) {}
+
 // Return new grown hashtable by grow factor, redistributing existing buckets.
 void *_ht_grow(_HTHeader *ht, int grow_factor) {
   _HTHeader *new_ht = _ht_new(ht->cap * grow_factor);
-  _HTItem *items = (_HTItem *)(ht + 1);
+  _HTBucket *items = (_HTBucket *)(ht + 1);
 
   return new_ht;
 }
@@ -121,7 +135,7 @@ void *_ht_grow_if_needed(_HTHeader *ht, size_t size) {
 
   if (ht->cap < size *) {
     // grow hashtable and redistribute items (silly not-in-place algorithm TBC?)
-    _HTHeader *new_ht = _HTItem *old_items = (_HTItem *)(ht + 1);
+    _HTHeader *new_ht = _HTItem *old_items = (_HTBucket *)(ht + 1);
   }
 }
 
@@ -130,7 +144,7 @@ void *_ht_grow_if_needed(_HTHeader *ht, size_t size) {
 #define ht_put(arr, key, val)                                                  \
   {                                                                            \
     arr_push(arr, (typeof(*arr)){.key=(key), .value=(val)}));                  \
-    (t) = _ht_grow_if_needed(_arr_header(arr)->hashtable);                      \
+    (t) = _ht_grow_if_needed(_arr_header(arr)->hashtable);                     \
   }
 
 #define ht_get_idx(arr, key) -1
