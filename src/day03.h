@@ -27,6 +27,7 @@ uint32_t day3(const solution_part part) {
 
   house *houses = NULL;
   vec2 pos = {0, 0};
+  inc_house(&houses, pos);
 
   while (true) {
   next_char:

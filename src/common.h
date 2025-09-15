@@ -55,7 +55,7 @@ void sort_uint32_array(uint32_t *arr, size_t size) {
 }
 
 typedef struct {
-  int32_t x,y;
+  int32_t x, y;
 } vec2;
 
 typedef struct {

@@ -45,6 +45,7 @@ void test_hashtable_duplication(void) {
     int value;
   } *m = NULL;
   pair k = {0, 0};
+  pair k2 = {10, 20};
 
   ht_put(m, k, 1);
   TEST_CHECK(ht_size(m) == 1);
@@ -52,6 +53,10 @@ void test_hashtable_duplication(void) {
   ht_put(m, k, 2);
   TEST_CHECK(ht_size(m) == 1);
   TEST_CHECK(ht_get(m, k) == 2);
+  ht_put(m, k2, 3);
+  TEST_CHECK(ht_size(m) == 2);
+  TEST_CHECK(ht_get(m, k) == 2);
+  TEST_CHECK(ht_get(m, k2) == 3);
   ht_free(m);
   TEST_CHECK(m == NULL);
 }
@@ -77,6 +82,6 @@ void test_hashtable_growth(void) {
 }
 
 TEST_LIST = {{"dynamic array", test_dynamic_array},
-            //  {"test hashtable duplication", test_hashtable_duplication},
+             {"test hashtable duplication", test_hashtable_duplication},
              {"test hashtable growth", test_hashtable_growth},
              {NULL, NULL}};

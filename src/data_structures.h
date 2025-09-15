@@ -43,8 +43,10 @@ void *_arr_grow_if_needed(void *arr, size_t elem_size) {
   return (void *)(hdr + 1);
 }
 
+// Number of elements in the array.
 #define arr_len(arr) ((arr) ? _arr_header(arr)->len : 0)
 
+// Dispose of the array.
 #define arr_free(arr)                                                          \
   {                                                                            \
     if (arr) {                                                                 \
@@ -53,14 +55,17 @@ void *_arr_grow_if_needed(void *arr, size_t elem_size) {
     (arr) = NULL;                                                              \
   }
 
+// Push value to the end of the array, growing its capacity if needed.
 #define arr_push(arr, val)                                                     \
   {                                                                            \
     (arr) = _arr_grow_if_needed(arr, sizeof(*(arr)));                          \
     (arr)[_arr_header(arr)->len++] = (val);                                    \
   }
 
+// Return the last value of the array, evicting it from the array.
 #define arr_pop(arr) (arr)[--(_arr_header(arr)->len)]
 
+// Return the last value of the array.
 #define arr_last(arr) (arr)[_arr_header(arr)->len - 1]
 
 // ==== Hash Table (append only) ====
@@ -72,7 +77,7 @@ void *_arr_grow_if_needed(void *arr, size_t elem_size) {
 // at once).
 typedef struct {
   size_t cap;
-} _HTHeader;
+} _HTBucketsHeader;
 
 typedef struct {
   uint64_t hash;
@@ -93,7 +98,8 @@ uint64_t hash(void *data, size_t size) {
 // Create new empty hashtable.
 void *_ht_new(size_t cap) {
   // allocate header and items array right after the header
-  _HTHeader *hdr = malloc(sizeof(_HTHeader) + sizeof(_HTBucket) * cap);
+  _HTBucketsHeader *hdr =
+      malloc(sizeof(_HTBucketsHeader) + sizeof(_HTBucket) * cap);
   hdr->cap = cap;
   _HTBucket *buckets = (_HTBucket *)(hdr + 1);
   for (size_t i = 0; i < cap; i++) {
@@ -102,91 +108,118 @@ void *_ht_new(size_t cap) {
   return hdr;
 }
 
-inline size_t _ht_bucket_idx(_HTHeader *hdr, void *key, size_t key_size) {
-  return hash(key, key_size) & (hdr->cap - 1);
+// Find bucket index to start the search for index from.
+inline ptrdiff_t _ht_bucket_starting_idx(_HTBucketsHeader *hdr, uint64_t hash) {
+  return hash & (hdr->cap - 1);
 }
 
-ptrdiff_t _ht_get_idx_from_bucket(_HTHeader *hdr, uint64_t hash) {
+// Find index of bucket where the hash should be stored.
+ptrdiff_t _ht_find_bucket_idx(_HTBucketsHeader *hdr, uint64_t hash) {
   _HTBucket *buckets = (_HTBucket *)(hdr + 1);
-  ptrdiff_t bucket_idx = hash & (hdr->cap - 1); // hash % cap
-  while (buckets[bucket_idx].hash != hash) {
-    if (buckets[bucket_idx].idx == -1)
-      return -1;
-    if (++bucket_idx == hdr->cap)
-      bucket_idx = 0;
-  }
-  return buckets[bucket_idx].idx;
-}
-
-void _ht_put_in_bucket(_HTHeader *hdr, uint64_t hash, ptrdiff_t idx) {
-  _HTBucket *buckets = (_HTBucket *)(hdr + 1);
-  ptrdiff_t bucket_idx = hash & (hdr->cap - 1); // hash % cap
-  while (buckets[bucket_idx].idx != -1) {
-    // find unused bucket, wrapping at cap
+  ptrdiff_t bucket_idx = _ht_bucket_starting_idx(hdr, hash);
+  while (buckets[bucket_idx].hash != hash && buckets[bucket_idx].idx != -1) {
+    // advance bucket, wrapping at cap
     if (++bucket_idx == hdr->cap) {
       bucket_idx = 0;
     }
   }
-  buckets[bucket_idx] = (_HTBucket){.hash = hash, .idx = idx};
+  return bucket_idx;
+}
+
+// Get idx for key-value arr from appropriate bucket (or -1 if hash not in
+// buckets).
+ptrdiff_t _ht_get_idx_from_bucket(_HTBucketsHeader *hdr, uint64_t hash) {
+  _HTBucket *buckets = (_HTBucket *)(hdr + 1);
+  ptrdiff_t b_idx = _ht_find_bucket_idx(hdr, hash);
+  return buckets[b_idx].idx;
+}
+
+void _ht_put_in_bucket(_HTBucketsHeader *hdr, uint64_t hash, ptrdiff_t idx) {
+  _HTBucket *buckets = (_HTBucket *)(hdr + 1);
+  ptrdiff_t b_idx = _ht_find_bucket_idx(hdr, hash);
+  buckets[b_idx] = (_HTBucket){.hash = hash, .idx = idx};
 }
 
 // Return new grown hashtable by grow factor, redistributing existing buckets.
 // The hashtable passed as argument is freed.
-void *_ht_grow(_HTHeader *hdr, int grow_factor) {
-  _HTHeader *new_ht = _ht_new(hdr->cap * grow_factor);
-  _HTBucket *buckets = (_HTBucket *)(hdr + 1);
+void *_ht_buckets_grow(_HTBucketsHeader *b_hdr, int grow_factor) {
+  _HTBucketsHeader *new_buckets_hdr = _ht_new(b_hdr->cap * grow_factor);
+  _HTBucket *old_buckets = (_HTBucket *)(b_hdr + 1);
 
-  for (size_t i = 0; i < hdr->cap; i++) {
-    _HTBucket *b = &buckets[i];
+  for (size_t i = 0; i < b_hdr->cap; i++) {
+    _HTBucket *b = &old_buckets[i];
     if (b->idx > -1) {
-      _ht_put_in_bucket(new_ht, b->hash, b->idx);
+      _ht_put_in_bucket(new_buckets_hdr, b->hash, b->idx);
     }
   }
 
-  free(hdr);
-  return new_ht;
+  free(b_hdr);
+  return new_buckets_hdr;
 }
 
-void _ht_grow_if_needed(_ArrHeader *arr_hdr, size_t size, int grow_factor) {
+void _ht_buckets_grow_if_needed(_ArrHeader *arr_hdr, size_t size,
+                                int grow_factor) {
   if (arr_hdr->hashtable == NULL) {
     arr_hdr->hashtable = _ht_new(DS_INITIAL_CAPACITY);
   }
 
-  if (((_HTHeader *)arr_hdr->hashtable)->cap < size * grow_factor) {
+  if (((_HTBucketsHeader *)arr_hdr->hashtable)->cap < size * grow_factor) {
     // grow hashtable and redistribute items (silly not-in-place algorithm TBC?)
-    arr_hdr->hashtable = _ht_grow(arr_hdr->hashtable, grow_factor);
+    arr_hdr->hashtable = _ht_buckets_grow(arr_hdr->hashtable, grow_factor);
   }
 }
 
-#define _ht_header(arr) ((_HTHeader *)(_arr_header(arr)->hashtable))
+#define _ht_header(arr) ((_HTBucketsHeader *)(_arr_header(arr)->hashtable))
 
 #define _key_hash(arr, k) hash(&(k), sizeof((arr)->key))
 
+// Number of elements in hashtable.
 #define ht_size(arr) arr_len(arr)
 
-#define ht_put(arr, k, v)                                                      \
-  {                                                                            \
-    typeof(*arr) item = (typeof(*arr)){.key = (k), .value = (v)};              \
-    arr_push((arr), item);                                                     \
-    _ht_grow_if_needed(_arr_header(arr), ht_size(arr), DS_GROW_FACTOR);        \
-    uint64_t h = hash(&(k), sizeof((arr)->key));                       \
-    _ht_put_in_bucket(_arr_header(arr)->hashtable, h, ht_size(arr) - 1);       \
-  }
-
+// Get the index into the array where the key-value pair corresponding to the
+// key is stored.
 #define ht_get_idx(arr, k)                                                     \
-  _ht_get_idx_from_bucket(_ht_header(arr), _key_hash(arr, k))
+  _ht_get_idx_from_bucket(_ht_header(arr), _key_hash((arr), (k)))
 
+// Get the value corresponding to the key.
 #define ht_get(arr, k) ((arr)[ht_get_idx(arr, k)].value)
 
+// True if the hashtable contains a value associated with the key.
 #define ht_has(arr, k) ((arr) != NULL && ht_get_idx((arr), (k)) >= 0)
 
+// Put or update a value corresponding to the given key.
+#define ht_put(arr, k, v)                                                      \
+  {                                                                            \
+    bool new_key;                                                              \
+    if (arr) {                                                                 \
+      ptrdiff_t idx = ht_get_idx((arr), (k));                                  \
+      if (idx >= 0) {                                                          \
+        (arr)[idx].value = (v);                                                \
+        new_key = false;                                                       \
+      } else {                                                                 \
+        new_key = true;                                                        \
+      }                                                                        \
+    } else {                                                                   \
+      new_key = true;                                                          \
+    }                                                                          \
+    if (new_key) {                                                             \
+      typeof(*arr) item = (typeof(*arr)){.key = (k), .value = (v)};            \
+      arr_push((arr), item);                                                   \
+      _ht_buckets_grow_if_needed(_arr_header(arr), ht_size(arr),               \
+                                 DS_GROW_FACTOR);                              \
+      uint64_t h = _key_hash((arr), (k));                                      \
+      _ht_put_in_bucket(_arr_header(arr)->hashtable, h, ht_size(arr) - 1);     \
+    }                                                                          \
+  }
+
+// Dispose of the hashtable.
 #define ht_free(arr)                                                           \
   {                                                                            \
     if (arr) {                                                                 \
-      _HTHeader *hdr = (_arr_header(arr))->hashtable;                          \
-      if (hdr) {                                                               \
-        free(hdr);                                                             \
-        hdr = NULL;                                                            \
+      _HTBucketsHeader *b_hdr = (_arr_header(arr))->hashtable;                 \
+      if (b_hdr) {                                                             \
+        free(b_hdr);                                                           \
+        b_hdr = NULL;                                                          \
       }                                                                        \
     }                                                                          \
     arr_free(arr);                                                             \
