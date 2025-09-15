@@ -18,6 +18,25 @@ void inc_house(house **houses, vec2 pos) {
   }
 }
 
+bool move(vec2 *pos, int c) {
+  switch (c) {
+  case '^':
+    *pos = (vec2){pos->x, pos->y - 1};
+    return true;
+  case 'v':
+    *pos = (vec2){pos->x, pos->y + 1};
+    return true;
+  case '>':
+    *pos = (vec2){pos->x + 1, pos->y};
+    return true;
+  case '<':
+    *pos = (vec2){pos->x - 1, pos->y};
+    return true;
+  default:
+    return false;
+  }
+}
+
 uint32_t day3(const solution_part part) {
   FILE *f = fopen("data/input03.txt", "r");
   if (f == NULL) {
@@ -26,32 +45,24 @@ uint32_t day3(const solution_part part) {
   }
 
   house *houses = NULL;
-  vec2 pos = {0, 0};
-  inc_house(&houses, pos);
+  bool robo_santa = false;
+  vec2 santa_pos = {0, 0};
+  vec2 robo_pos = {0, 0};
+  vec2 *pos = &santa_pos;
+  inc_house(&houses, *pos);
 
   while (true) {
-  next_char:
     int c = fgetc(f);
     if (c == EOF) {
       break;
     }
-    switch (c) {
-    case '^':
-      pos = (vec2){pos.x, pos.y - 1};
-      break;
-    case 'v':
-      pos = (vec2){pos.x, pos.y + 1};
-      break;
-    case '>':
-      pos = (vec2){pos.x + 1, pos.y};
-      break;
-    case '<':
-      pos = (vec2){pos.x - 1, pos.y};
-      break;
-    default:
-      goto next_char; // yay! goto!
+    if (move(pos, c)) {
+      inc_house(&houses, *pos);
     }
-    inc_house(&houses, pos);
+    if (part == PART2) {
+      pos = robo_santa ? &santa_pos : &robo_pos;
+      robo_santa = !robo_santa;
+    }
   }
   fclose(f);
   return ht_size(houses);
