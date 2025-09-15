@@ -45,10 +45,15 @@ void test_hashtable(void) {
     int value;
   } *m = NULL;
   for (int i = 1; i <= 200; i++) {
-    ht_put(m, ((pair){i, i * 2}), i * 3);
+    pair key = (pair){i, i * 2};
+    int val = i * 3;
+    ht_put(m, key, val);
   }
   TEST_CHECK(ht_size(m) == 200);
-  TEST_CHECK(ht_has(m, ((pair){20, 40})));
+  {
+    pair key = (pair){20, 40};
+    TEST_CHECK(ht_has(m, p));
+  }
   TEST_CHECK(!ht_has(m, ((pair){20, 4})));
   TEST_CHECK(ht_get(m, ((pair){30, 60})) == 90);
   ht_free(m);

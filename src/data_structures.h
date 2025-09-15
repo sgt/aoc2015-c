@@ -118,36 +118,65 @@ void _ht_put_in_bucket(_HTHeader *hdr, uint64_t hash, ptrdiff_t idx) {
   buckets[bucket_idx] = (_HTBucket){.hash = hash, .idx = idx};
 }
 
-ptrdiff_t _ht_get_idx_from_bucket(_HTHeader *hdr, uint64_t hash) {}
+ptrdiff_t _ht_get_idx_from_bucket(_HTHeader *hdr, uint64_t hash) {
+  _HTBucket *buckets = (_HTBucket *)(hdr + 1);
+  ptrdiff_t bucket_idx = hash & (hdr->cap - 1); // hash % cap
+  while (buckets[bucket_idx].hash != hash) {
+    if (++bucket_idx == hdr->cap) {
+      bucket_idx = 0;
+    }
+  }
+  return buckets[bucket_idx].idx;
+}
 
 // Return new grown hashtable by grow factor, redistributing existing buckets.
-void *_ht_grow(_HTHeader *ht, int grow_factor) {
-  _HTHeader *new_ht = _ht_new(ht->cap * grow_factor);
-  _HTBucket *items = (_HTBucket *)(ht + 1);
+// The hashtable passed as argument is freed.
+void *_ht_grow(_HTHeader *hdr, int grow_factor) {
+  _HTHeader *new_ht = _ht_new(hdr->cap * grow_factor);
+  _HTBucket *buckets = (_HTBucket *)(hdr + 1);
 
+  for (size_t i = 0; i < hdr->cap; i++) {
+    _HTBucket *b = &buckets[i];
+    if (b->idx > -1) {
+      _ht_put_in_bucket(new_ht, b->hash, b->idx);
+    }
+  }
+
+  free(hdr);
   return new_ht;
 }
 
-void *_ht_grow_if_needed(_HTHeader *ht, size_t size) {
-  if (ht == NULL) {
-    return _ht_new(DS_INITIAL_CAPACITY);
+void _ht_grow_if_needed(_ArrHeader *arr_hdr, size_t size, int grow_factor) {
+  if (arr_hdr->hashtable == NULL) {
+    arr_hdr->hashtable = _ht_new(DS_INITIAL_CAPACITY);
   }
 
-  if (ht->cap < size *) {
+  if (((_HTHeader *)arr_hdr->hashtable)->cap < size * grow_factor) {
     // grow hashtable and redistribute items (silly not-in-place algorithm TBC?)
-    _HTHeader *new_ht = _HTItem *old_items = (_HTBucket *)(ht + 1);
+    arr_hdr->hashtable = _ht_grow(arr_hdr->hashtable, grow_factor);
   }
 }
+
+#define _ht_header(arr) ((_HTHeader *)(_arr_header(arr)->hashtable))
 
 #define ht_size(arr) arr_len(arr)
 
 #define ht_put(arr, key, val)                                                  \
   {                                                                            \
-    arr_push(arr, (typeof(*arr)){.key=(key), .value=(val)}));                  \
-    (t) = _ht_grow_if_needed(_arr_header(arr)->hashtable);                     \
+    typeof(*arr) item = (typeof(*arr)){.key = (key), .value = (val)};          \
+    arr_push((arr), item);                                                     \
+    _ht_grow_if_needed(_arr_header(arr), ht_size(arr), DS_GROW_FACTOR);        \
+    uint64_t h = hash(&(key), sizeof(typeof((arr)->key)));                     \
+    _ht_put_in_bucket(_arr_header(arr)->hashtable, h, ht_size(arr) - 1);       \
   }
 
-#define ht_get_idx(arr, key) -1
+// TODO extract into a function so this macro can return a value.
+#define ht_get_idx(arr, key)                                                   \
+  {                                                                            \
+    _HTHeader *ht_hdr = _ht_header(arr);                                       \
+    uint64_t h = hash(&(key), sizeof(typeof((arr)->key)));                     \
+    _ht_get_index_from_bucket(ht_hdr, key_hash);                               \
+  }
 
 #define ht_get(arr, key) (arr[ht_get_idx(arr, key)].value)
 
@@ -155,6 +184,6 @@ void *_ht_grow_if_needed(_HTHeader *ht, size_t size) {
 
 #define ht_free(arr)                                                           \
   {                                                                            \
-    /* TODO */                                                                 \
+    free(_ht_header(arr));                                                     \
     arr_free(arr);                                                             \
   }
