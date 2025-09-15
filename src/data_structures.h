@@ -106,18 +106,6 @@ inline size_t _ht_bucket_idx(_HTHeader *hdr, void *key, size_t key_size) {
   return hash(key, key_size) & (hdr->cap - 1);
 }
 
-void _ht_put_in_bucket(_HTHeader *hdr, uint64_t hash, ptrdiff_t idx) {
-  _HTBucket *buckets = (_HTBucket *)(hdr + 1);
-  ptrdiff_t bucket_idx = hash & (hdr->cap - 1); // hash % cap
-  while (buckets[bucket_idx].idx != -1) {
-    // find unused bucket, wrapping at cap
-    if (++bucket_idx == hdr->cap) {
-      bucket_idx = 0;
-    }
-  }
-  buckets[bucket_idx] = (_HTBucket){.hash = hash, .idx = idx};
-}
-
 ptrdiff_t _ht_get_idx_from_bucket(_HTHeader *hdr, uint64_t hash) {
   _HTBucket *buckets = (_HTBucket *)(hdr + 1);
   ptrdiff_t bucket_idx = hash & (hdr->cap - 1); // hash % cap
@@ -128,6 +116,18 @@ ptrdiff_t _ht_get_idx_from_bucket(_HTHeader *hdr, uint64_t hash) {
       bucket_idx = 0;
   }
   return buckets[bucket_idx].idx;
+}
+
+void _ht_put_in_bucket(_HTHeader *hdr, uint64_t hash, ptrdiff_t idx) {
+  _HTBucket *buckets = (_HTBucket *)(hdr + 1);
+  ptrdiff_t bucket_idx = hash & (hdr->cap - 1); // hash % cap
+  while (buckets[bucket_idx].idx != -1) {
+    // find unused bucket, wrapping at cap
+    if (++bucket_idx == hdr->cap) {
+      bucket_idx = 0;
+    }
+  }
+  buckets[bucket_idx] = (_HTBucket){.hash = hash, .idx = idx};
 }
 
 // Return new grown hashtable by grow factor, redistributing existing buckets.
@@ -160,7 +160,7 @@ void _ht_grow_if_needed(_ArrHeader *arr_hdr, size_t size, int grow_factor) {
 
 #define _ht_header(arr) ((_HTHeader *)(_arr_header(arr)->hashtable))
 
-#define _key_hash(arr, k) hash(&(k), sizeof(typeof((arr)->key)))
+#define _key_hash(arr, k) hash(&(k), sizeof((arr)->key))
 
 #define ht_size(arr) arr_len(arr)
 
@@ -169,7 +169,7 @@ void _ht_grow_if_needed(_ArrHeader *arr_hdr, size_t size, int grow_factor) {
     typeof(*arr) item = (typeof(*arr)){.key = (k), .value = (v)};              \
     arr_push((arr), item);                                                     \
     _ht_grow_if_needed(_arr_header(arr), ht_size(arr), DS_GROW_FACTOR);        \
-    uint64_t h = hash(&(k), sizeof(typeof((arr)->key)));                       \
+    uint64_t h = hash(&(k), sizeof((arr)->key));                       \
     _ht_put_in_bucket(_arr_header(arr)->hashtable, h, ht_size(arr) - 1);       \
   }
 
