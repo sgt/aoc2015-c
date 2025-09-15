@@ -7,15 +7,6 @@
 #define NUM_LEN 32
 #define LINE_LEN 128
 
-typedef struct {
-  uint32_t x, y, z;
-} vec3;
-
-vec3 vec3_sorted(vec3 v) {
-  uint32_t sorted_sides[3] = {v.x, v.y, v.z};
-  sort_uint32_array(&sorted_sides[0], 3);
-  return (vec3){sorted_sides[0], sorted_sides[1], sorted_sides[2]};
-}
 
 uint32_t day2_formula1(vec3 v) {
   vec3 sv = vec3_sorted(v);

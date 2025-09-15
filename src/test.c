@@ -36,24 +36,40 @@ void test_dynamic_array(void) {
   TEST_CHECK(list == NULL);
 }
 
-void test_hashtable(void) {
-  typedef struct {
-    int x, y;
-  } pair;
+typedef struct {
+  int x, y;
+} pair;
+void test_hashtable_duplication(void) {
   struct {
     pair key;
     int value;
   } *m = NULL;
+  pair k = {0, 0};
+
+  ht_put(m, k, 1);
+  TEST_CHECK(ht_size(m) == 1);
+  TEST_CHECK(ht_get(m, k) == 1);
+  ht_put(m, k, 2);
+  TEST_CHECK(ht_size(m) == 1);
+  TEST_CHECK(ht_get(m, k) == 2);
+  ht_free(m);
+  TEST_CHECK(m == NULL);
+}
+
+void test_hashtable_growth(void) {
+  struct {
+    pair key;
+    int value;
+  } *m = NULL;
+
+  TEST_CHECK(!ht_has(m, ((pair){0, 0})));
   for (int i = 1; i <= 200; i++) {
     pair key = (pair){i, i * 2};
     int val = i * 3;
     ht_put(m, key, val);
   }
   TEST_CHECK(ht_size(m) == 200);
-  {
-    pair key = (pair){20, 40};
-    TEST_CHECK(ht_has(m, p));
-  }
+  TEST_CHECK(ht_has(m, ((pair){20, 40})));
   TEST_CHECK(!ht_has(m, ((pair){20, 4})));
   TEST_CHECK(ht_get(m, ((pair){30, 60})) == 90);
   ht_free(m);
@@ -61,5 +77,6 @@ void test_hashtable(void) {
 }
 
 TEST_LIST = {{"dynamic array", test_dynamic_array},
-             {"test hashtable", test_hashtable},
+            //  {"test hashtable duplication", test_hashtable_duplication},
+             {"test hashtable growth", test_hashtable_growth},
              {NULL, NULL}};

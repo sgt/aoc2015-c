@@ -5,6 +5,7 @@
 #include "common.h"
 #include "day01.h"
 #include "day02.h"
+#include "day03.h"
 
 int main(const int argc, const char *argv[]) {
   if (argc != 2) {
@@ -27,6 +28,10 @@ int main(const int argc, const char *argv[]) {
   case 2:
     printf("2.1: %d\n", day2_part1());
     printf("2.2: %d\n", day2_part2());
+    break;
+  case 3:
+    printf("3.1: %d\n", day3_part1());
+    printf("3.2: %d\n", day3_part2());
     break;
   default:
     printf("there is no problem %d\n", n);

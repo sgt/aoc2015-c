@@ -53,3 +53,17 @@ int _compare_uint32(const void *a, const void *b) {
 void sort_uint32_array(uint32_t *arr, size_t size) {
   qsort(arr, size, sizeof(uint32_t), _compare_uint32);
 }
+
+typedef struct {
+  int32_t x,y;
+} vec2;
+
+typedef struct {
+  int32_t x, y, z;
+} vec3;
+
+vec3 vec3_sorted(vec3 v) {
+  uint32_t sorted_sides[3] = {v.x, v.y, v.z};
+  sort_uint32_array(&sorted_sides[0], 3);
+  return (vec3){sorted_sides[0], sorted_sides[1], sorted_sides[2]};
+}

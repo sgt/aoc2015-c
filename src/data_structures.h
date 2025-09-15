@@ -122,9 +122,10 @@ ptrdiff_t _ht_get_idx_from_bucket(_HTHeader *hdr, uint64_t hash) {
   _HTBucket *buckets = (_HTBucket *)(hdr + 1);
   ptrdiff_t bucket_idx = hash & (hdr->cap - 1); // hash % cap
   while (buckets[bucket_idx].hash != hash) {
-    if (++bucket_idx == hdr->cap) {
+    if (buckets[bucket_idx].idx == -1)
+      return -1;
+    if (++bucket_idx == hdr->cap)
       bucket_idx = 0;
-    }
   }
   return buckets[bucket_idx].idx;
 }
@@ -159,31 +160,34 @@ void _ht_grow_if_needed(_ArrHeader *arr_hdr, size_t size, int grow_factor) {
 
 #define _ht_header(arr) ((_HTHeader *)(_arr_header(arr)->hashtable))
 
+#define _key_hash(arr, k) hash(&(k), sizeof(typeof((arr)->key)))
+
 #define ht_size(arr) arr_len(arr)
 
-#define ht_put(arr, key, val)                                                  \
+#define ht_put(arr, k, v)                                                      \
   {                                                                            \
-    typeof(*arr) item = (typeof(*arr)){.key = (key), .value = (val)};          \
+    typeof(*arr) item = (typeof(*arr)){.key = (k), .value = (v)};              \
     arr_push((arr), item);                                                     \
     _ht_grow_if_needed(_arr_header(arr), ht_size(arr), DS_GROW_FACTOR);        \
-    uint64_t h = hash(&(key), sizeof(typeof((arr)->key)));                     \
+    uint64_t h = hash(&(k), sizeof(typeof((arr)->key)));                       \
     _ht_put_in_bucket(_arr_header(arr)->hashtable, h, ht_size(arr) - 1);       \
   }
 
-// TODO extract into a function so this macro can return a value.
-#define ht_get_idx(arr, key)                                                   \
-  {                                                                            \
-    _HTHeader *ht_hdr = _ht_header(arr);                                       \
-    uint64_t h = hash(&(key), sizeof(typeof((arr)->key)));                     \
-    _ht_get_index_from_bucket(ht_hdr, key_hash);                               \
-  }
+#define ht_get_idx(arr, k)                                                     \
+  _ht_get_idx_from_bucket(_ht_header(arr), _key_hash(arr, k))
 
-#define ht_get(arr, key) (arr[ht_get_idx(arr, key)].value)
+#define ht_get(arr, k) ((arr)[ht_get_idx(arr, k)].value)
 
-#define ht_has(arr, key) ((ht_get_idx(arr, key)) >= 0)
+#define ht_has(arr, k) ((arr) != NULL && ht_get_idx((arr), (k)) >= 0)
 
 #define ht_free(arr)                                                           \
   {                                                                            \
-    free(_ht_header(arr));                                                     \
+    if (arr) {                                                                 \
+      _HTHeader *hdr = (_arr_header(arr))->hashtable;                          \
+      if (hdr) {                                                               \
+        free(hdr);                                                             \
+        hdr = NULL;                                                            \
+      }                                                                        \
+    }                                                                          \
     arr_free(arr);                                                             \
   }
