@@ -8,4 +8,5 @@ $ just run <day-number>
 ```
 
 Credits:
-- [acutest](https://github.com/mity/acutest)
+- Unit testing: https://github.com/mity/acutest
+- md5: https://github.com/Zunawe/md5-c

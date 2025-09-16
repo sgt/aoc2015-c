@@ -22,19 +22,20 @@ bool move(vec2 *pos, int c) {
   switch (c) {
   case '^':
     *pos = (vec2){pos->x, pos->y - 1};
-    return true;
+    break;
   case 'v':
     *pos = (vec2){pos->x, pos->y + 1};
-    return true;
+    break;
   case '>':
     *pos = (vec2){pos->x + 1, pos->y};
-    return true;
+    break;
   case '<':
     *pos = (vec2){pos->x - 1, pos->y};
-    return true;
+    break;
   default:
     return false;
   }
+  return true;
 }
 
 uint32_t day3(const solution_part part) {

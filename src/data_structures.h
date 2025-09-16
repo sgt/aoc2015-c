@@ -14,8 +14,8 @@ For usage examples, see test.c
 #include <stdlib.h>
 #include <string.h>
 
-#define DS_INITIAL_CAPACITY (2 ^ 4) // must be power of 2
-#define DS_GROW_FACTOR 2            // also must be power of 2
+#define DS_INITIAL_CAPACITY (2 ^ 10) // must be power of 2
+#define DS_GROW_FACTOR 2             // also must be power of 2
 
 // ==== Dynamic Array (append only) ====
 
@@ -171,7 +171,7 @@ void _ht_buckets_grow_if_needed(_ArrHeader *arr_hdr, size_t size,
 
 #define _ht_header(arr) ((_HTBucketsHeader *)(_arr_header(arr)->hashtable))
 
-#define _key_hash(arr, k) hash(&(k), sizeof((arr)->key))
+#define _key_hash(k) hash(&(k), sizeof(k))
 
 // Number of elements in hashtable.
 #define ht_size(arr) arr_len(arr)
@@ -179,7 +179,7 @@ void _ht_buckets_grow_if_needed(_ArrHeader *arr_hdr, size_t size,
 // Get the index into the array where the key-value pair corresponding to the
 // key is stored.
 #define ht_get_idx(arr, k)                                                     \
-  _ht_get_idx_from_bucket(_ht_header(arr), _key_hash((arr), (k)))
+  _ht_get_idx_from_bucket(_ht_header(arr), _key_hash(k))
 
 // Get the value corresponding to the key.
 #define ht_get(arr, k) ((arr)[ht_get_idx(arr, k)].value)
@@ -191,8 +191,9 @@ void _ht_buckets_grow_if_needed(_ArrHeader *arr_hdr, size_t size,
 #define ht_put(arr, k, v)                                                      \
   {                                                                            \
     bool new_key;                                                              \
+    uint64_t h = _key_hash(k);                                                 \
     if (arr) {                                                                 \
-      ptrdiff_t idx = ht_get_idx((arr), (k));                                  \
+      ptrdiff_t idx = _ht_get_idx_from_bucket(_ht_header(arr), h);             \
       if (idx >= 0) {                                                          \
         (arr)[idx].value = (v);                                                \
         new_key = false;                                                       \
@@ -207,7 +208,6 @@ void _ht_buckets_grow_if_needed(_ArrHeader *arr_hdr, size_t size,
       arr_push((arr), item);                                                   \
       _ht_buckets_grow_if_needed(_arr_header(arr), ht_size(arr),               \
                                  DS_GROW_FACTOR);                              \
-      uint64_t h = _key_hash((arr), (k));                                      \
       _ht_put_in_bucket(_arr_header(arr)->hashtable, h, ht_size(arr) - 1);     \
     }                                                                          \
   }
