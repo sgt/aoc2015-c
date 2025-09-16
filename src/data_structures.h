@@ -88,7 +88,7 @@ typedef struct {
 uint64_t hash(void *data, size_t size) {
   uint64_t hash = 14695981039346656037ULL;
   unsigned char *bytes = (unsigned char *)data;
-  for (size_t i = 0; i < size; i++) {
+  for (size_t i = 0; i < size; ++i){
     hash ^= bytes[i];
     hash *= 1099511628211ULL;
   }
@@ -102,14 +102,14 @@ void *_ht_new(size_t cap) {
       malloc(sizeof(_HTBucketsHeader) + sizeof(_HTBucket) * cap);
   hdr->cap = cap;
   _HTBucket *buckets = (_HTBucket *)(hdr + 1);
-  for (size_t i = 0; i < cap; i++) {
+  for (size_t i = 0; i < cap; ++i) {
     *(buckets + i) = (_HTBucket){.hash = 0, .idx = -1};
   }
   return hdr;
 }
 
 // Find bucket index to start the search for index from.
-inline ptrdiff_t _ht_bucket_starting_idx(_HTBucketsHeader *hdr, uint64_t hash) {
+static inline ptrdiff_t _ht_bucket_starting_idx(_HTBucketsHeader *hdr, uint64_t hash) {
   return hash & (hdr->cap - 1);
 }
 
@@ -146,7 +146,7 @@ void *_ht_buckets_grow(_HTBucketsHeader *b_hdr, int grow_factor) {
   _HTBucketsHeader *new_buckets_hdr = _ht_new(b_hdr->cap * grow_factor);
   _HTBucket *old_buckets = (_HTBucket *)(b_hdr + 1);
 
-  for (size_t i = 0; i < b_hdr->cap; i++) {
+  for (size_t i = 0; i < b_hdr->cap; ++i) {
     _HTBucket *b = &old_buckets[i];
     if (b->idx > -1) {
       _ht_put_in_bucket(new_buckets_hdr, b->hash, b->idx);
