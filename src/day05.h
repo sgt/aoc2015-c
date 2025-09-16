@@ -1,7 +1,9 @@
 #pragma once
 
 #include "common.h"
+#include "data_structures.h"
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 
 static inline bool is_vowel(char c) {
@@ -18,8 +20,8 @@ bool is_nice(const char *s) {
   bool double_letter_encountered = false;
   bool forbidden_combo_encountered = false;
   char prev = '\0';
-  for (int i = 0; s[i] != '\0' && s[i] != '\n'; ++i) {
-    char c = s[i];
+  char c;
+  for (int i = 0; (c = s[i], c != '\0' && c != '\n'); ++i) {
     if (is_vowel(c)) {
       ++vowel_counter;
     }
@@ -36,7 +38,39 @@ bool is_nice(const char *s) {
          !forbidden_combo_encountered;
 }
 
-bool is_nice2(const char *s) { return false; }
+bool is_nice2(const char *s) {
+  typedef struct {
+    char c1, c2;
+  } pair;
+  struct {
+    pair key;
+    int value;
+  } *m = NULL;
+  bool contains_two_pairs = false;
+  bool contains_xyx = false;
+  char prevprev = '\0';
+  char prev = s[0];
+  char c;
+  for (int i = 1; (c = s[i], c != '\0' && c != '\n'); ++i) {
+    if (!contains_xyx && prevprev == c) {
+      contains_xyx = true;
+    }
+
+    if (!contains_two_pairs) {
+      pair p = {prev, c};
+      ptrdiff_t pair_idx = ht_get_idx(m, p);
+      if (pair_idx > -1 && (i - m[pair_idx].value) > 1) {
+        contains_two_pairs = true;
+      } else if (pair_idx == -1) {
+        ht_put(m, p, i);
+      }
+    }
+    prevprev = prev;
+    prev = c;
+  }
+
+  return contains_two_pairs && contains_xyx;
+}
 
 uint32_t day5(const solution_part part) {
   FILE *f = fopen("data/input05.txt", "r");
@@ -46,10 +80,10 @@ uint32_t day5(const solution_part part) {
   }
   char line[128];
   int result = 0;
-  while (!feof(f)) {
-    fgets(line, 100, f);
-    if (part == PART1 ? is_nice(line) : is_nice2(line))
+  while (fgets(line, 100, f) != NULL) {
+    if (part == PART1 ? is_nice(line) : is_nice2(line)) {
       ++result;
+    }
   }
   fclose(f);
   return result;

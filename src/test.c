@@ -93,6 +93,8 @@ void test_day05(void) {
   TEST_CHECK(is_nice2("xxyxx"));
   TEST_CHECK(!is_nice2("uurcxstgmygtbstg"));
   TEST_CHECK(!is_nice2("ieodomkazucvgmuy"));
+  TEST_CHECK(!is_nice2("aaa"));
+  TEST_CHECK(is_nice2("aaaa"));
 }
 
 TEST_LIST = {{"dynamic array", test_dynamic_array},

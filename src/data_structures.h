@@ -85,10 +85,10 @@ typedef struct {
 } _HTBucket;
 
 // FNV hash
-uint64_t hash(void *data, size_t size) {
+uint64_t hash(const void *data, size_t size) {
   uint64_t hash = 14695981039346656037ULL;
   unsigned char *bytes = (unsigned char *)data;
-  for (size_t i = 0; i < size; ++i){
+  for (size_t i = 0; i < size; ++i) {
     hash ^= bytes[i];
     hash *= 1099511628211ULL;
   }
@@ -109,7 +109,8 @@ void *_ht_new(size_t cap) {
 }
 
 // Find bucket index to start the search for index from.
-static inline ptrdiff_t _ht_bucket_starting_idx(_HTBucketsHeader *hdr, uint64_t hash) {
+static inline ptrdiff_t _ht_bucket_starting_idx(_HTBucketsHeader *hdr,
+                                                uint64_t hash) {
   return hash & (hdr->cap - 1);
 }
 
@@ -179,7 +180,7 @@ void _ht_buckets_grow_if_needed(_ArrHeader *arr_hdr, size_t size,
 // Get the index into the array where the key-value pair corresponding to the
 // key is stored.
 #define ht_get_idx(arr, k)                                                     \
-  _ht_get_idx_from_bucket(_ht_header(arr), _key_hash(k))
+  ((arr) ? _ht_get_idx_from_bucket(_ht_header(arr), _key_hash(k)) : -1)
 
 // Get the value corresponding to the key.
 #define ht_get(arr, k) ((arr)[ht_get_idx(arr, k)].value)
