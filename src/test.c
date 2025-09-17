@@ -104,6 +104,13 @@ void test_bitset(void) {
   TEST_CHECK(!bitset_get(bs, 199));
   TEST_CHECK(bitset_cardinality(bs) == 10);
 
+  bitset_flip(&bs, 200);
+  TEST_CHECK(bitset_get(bs, 200));
+  TEST_CHECK(bitset_cardinality(bs) == 11);
+  bitset_flip(&bs, 200);
+  TEST_CHECK(!bitset_get(bs, 200));
+  TEST_CHECK(bitset_cardinality(bs) == 10);
+
   bitset_free(bs);
 }
 

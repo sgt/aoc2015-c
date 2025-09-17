@@ -278,7 +278,6 @@ void bitset_set(bitset **bs, size_t idx) {
   if (byte == NULL) {
     *bs = _bitset_grow(*bs, (idx >> 3) + 1);
     byte = _bitset_byte(*bs, idx);
-
     if (byte == NULL) {
       perror("can't grow bitset");
       exit(1);
@@ -286,6 +285,20 @@ void bitset_set(bitset **bs, size_t idx) {
   }
   uint8_t bit_idx = idx & 7;
   *byte |= 1 << bit_idx;
+}
+
+void bitset_flip(bitset **bs, size_t idx) {
+  uint8_t *byte = _bitset_byte(*bs, idx);
+  if (byte == NULL) {
+    *bs = _bitset_grow(*bs, (idx >> 3) + 1);
+    byte = _bitset_byte(*bs, idx);
+    if (byte == NULL) {
+      perror("can't grow bitset");
+      exit(1);
+    }
+  }
+  uint8_t bit_idx = idx & 7;
+  *byte ^= 1 << bit_idx;
 }
 
 #if defined(_MSC_VER)
