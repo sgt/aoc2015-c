@@ -265,18 +265,19 @@ bool bitset_get(bitset *bs, size_t idx) {
   return *byte & (1 << bit_idx);
 }
 
-void _bitset_grow(bitset *bs, size_t min_cap) {
+bitset *_bitset_grow(bitset *bs, size_t min_cap) {
   size_t new_cap = min_cap * DS_GROW_FACTOR;
   bs = realloc(bs, sizeof(bitset) + new_cap);
   memset(_bs_bytes_array(bs) + bs->capacity, 0, new_cap - bs->capacity);
   bs->capacity = new_cap;
+  return bs;
 }
 
-void bitset_set(bitset *bs, size_t idx) {
-  uint8_t *byte = _bitset_byte(bs, idx);
+void bitset_set(bitset **bs, size_t idx) {
+  uint8_t *byte = _bitset_byte(*bs, idx);
   if (byte == NULL) {
-    _bitset_grow(bs, (idx >> 3) + 1);
-    byte = _bitset_byte(bs, idx);
+    *bs = _bitset_grow(*bs, (idx >> 3) + 1);
+    byte = _bitset_byte(*bs, idx);
 
     if (byte == NULL) {
       perror("can't grow bitset");

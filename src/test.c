@@ -86,7 +86,7 @@ void test_bitset(void) {
   bitset *bs = bitset_create(10);
 
   for (int i = 1; i < 10; ++i) {
-    bitset_set(bs, i);
+    bitset_set(&bs, i);
     for (int j = 1; j < 10; ++j) {
       if (j <= i) {
         TEST_CHECK(bitset_get(bs, j));
@@ -97,7 +97,7 @@ void test_bitset(void) {
     TEST_CHECK(bitset_cardinality(bs) == i);
   }
 
-  bitset_set(bs, 100);
+  bitset_set(&bs, 100);
   TEST_CHECK(bitset_get(bs, 100));
   TEST_CHECK(!bitset_get(bs, 0));
   TEST_CHECK(!bitset_get(bs, 99));
