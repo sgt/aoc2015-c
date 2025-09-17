@@ -83,7 +83,7 @@ void test_hashtable_growth(void) {
 }
 
 void test_bitset(void) {
-  bitset *bs = bitset_create(10);
+  bitset *bs = bitset_create(5);
 
   // getting value beyond capacity
   TEST_CHECK(!bitset_get(bs, 12));
@@ -125,7 +125,17 @@ void test_bitset(void) {
   bitset_free(bs);
 }
 
-void test_bitset_ranges(void) {}
+void test_bitset_ranges(void) {
+  bitset *bs = bitset_create(5);
+
+  bitset_range_set(&bs, 6, 3);
+  TEST_CHECK(bitset_cardinality(bs) == 3);
+  for (size_t i = 0; i < 10; i++) {
+    TEST_CHECK(bitset_get(bs, i) == (i >= 6 && i <= 8));
+  }
+
+  bitset_free(bs);
+}
 
 void test_day05(void) {
   TEST_CHECK(is_nice("ugknbfddgicrmopn"));

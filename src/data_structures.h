@@ -234,9 +234,10 @@ typedef struct {
 
 size_t _next_power_of_2(size_t n) { return (n >> 1) << 2; }
 
-bitset *bitset_create(size_t capacity) {
-  bitset *bs = calloc(sizeof(bitset) + capacity, 1);
-  bs->capacity = capacity;
+bitset *bitset_create(size_t bit_capacity) {
+  size_t byte_capacity = (bit_capacity >> 3) + 1;
+  bitset *bs = calloc(sizeof(bitset) + byte_capacity, 1);
+  bs->capacity = byte_capacity;
   return bs;
 }
 
@@ -250,11 +251,13 @@ static inline bool _bs_byte_idx_beyond_capacity(bitset *bs, size_t byte_idx) {
   return byte_idx > (bs->capacity - 1);
 }
 
-bitset *_bitset_grow(bitset *bs, size_t min_cap) {
-  size_t new_cap = min_cap * DS_GROW_FACTOR;
-  bs = realloc(bs, sizeof(bitset) + new_cap);
-  memset(_bs_bytes_array(bs) + bs->capacity, 0, new_cap - bs->capacity);
-  bs->capacity = new_cap;
+// min_cap is in bits
+bitset *_bitset_grow(bitset *bs, size_t min_bit_cap) {
+  size_t min_byte_cap = (min_bit_cap >> 3) + 1;
+  size_t new_byte_cap = min_byte_cap * DS_GROW_FACTOR;
+  bs = realloc(bs, sizeof(bitset) + new_byte_cap);
+  memset(_bs_bytes_array(bs) + bs->capacity, 0, new_byte_cap - bs->capacity);
+  bs->capacity = new_byte_cap;
   return bs;
 }
 
@@ -281,7 +284,7 @@ bool bitset_get(bitset *bs, size_t idx) {
 void bitset_set(bitset **bs, size_t idx) {
   uint8_t *byte = _bitset_byte(*bs, idx);
   if (byte == NULL) {
-    *bs = _bitset_grow(*bs, (idx >> 3) + 1);
+    *bs = _bitset_grow(*bs, idx + 1);
     byte = _bitset_byte(*bs, idx);
   }
   uint8_t bit_idx = idx & 7;
@@ -301,7 +304,7 @@ void bitset_clear(bitset *bs, size_t idx) {
 void bitset_flip(bitset **bs, size_t idx) {
   uint8_t *byte = _bitset_byte(*bs, idx);
   if (byte == NULL) {
-    *bs = _bitset_grow(*bs, (idx >> 3) + 1);
+    *bs = _bitset_grow(*bs, idx + 1);
     byte = _bitset_byte(*bs, idx);
   }
   uint8_t bit_idx = idx & 7;
@@ -338,4 +341,13 @@ size_t bitset_cardinality(bitset *bs) {
 void bitset_free(bitset *bs) {
   free(bs);
   bs = NULL;
+}
+
+void bitset_range_set(bitset **bs, size_t idx, size_t length) {
+  size_t last_idx = idx + length - 1;
+  size_t byte_idx = _bs_byte_idx(last_idx);
+  size_t last_byte_idx = _bs_byte_idx(last_idx);
+  if (_bs_byte_idx_beyond_capacity(*bs, last_byte_idx)) {
+    *bs = _bitset_grow(*bs, last_byte_idx + 1);
+  }
 }
