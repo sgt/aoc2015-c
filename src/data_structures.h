@@ -225,3 +225,96 @@ void _ht_buckets_grow_if_needed(_ArrHeader *arr_hdr, size_t size,
     }                                                                          \
     arr_free(arr);                                                             \
   }
+
+// ==== Bitset ====
+
+typedef struct {
+  size_t capacity; // bytes allocated for bitset, right after this header
+} bitset;
+
+size_t _next_power_of_2(size_t n) { return (n >> 1) << 2; }
+
+bitset *bitset_create(size_t capacity) {
+  bitset *bs = calloc(sizeof(bitset) + capacity, 1);
+  bs->capacity = capacity;
+  return bs;
+}
+
+static inline uint8_t *_bs_bytes_array(bitset *bs) {
+  return (uint8_t *)(bs + 1);
+}
+
+static inline size_t _bs_byte_idx(size_t idx) { return idx >> 3; }
+
+// Get pointer to byte containing bit number idx, or NULL if idx is over bitset
+// capacity.
+uint8_t *_bitset_byte(bitset *bs, size_t idx) {
+  size_t byte_idx = _bs_byte_idx(idx);
+  if (byte_idx > (bs->capacity - 1)) {
+    return NULL;
+  }
+  uint8_t *bytes = _bs_bytes_array(bs);
+  return &bytes[byte_idx];
+}
+
+bool bitset_get(bitset *bs, size_t idx) {
+  uint8_t *byte = _bitset_byte(bs, idx);
+  if (byte == NULL)
+    return false;
+  uint8_t bit_idx = idx & 7;
+  return *byte & (1 << bit_idx);
+}
+
+void _bitset_grow(bitset *bs, size_t min_cap) {
+  size_t new_cap = min_cap * DS_GROW_FACTOR;
+  bs = realloc(bs, sizeof(bitset) + new_cap);
+  memset(_bs_bytes_array(bs) + bs->capacity, 0, new_cap - bs->capacity);
+  bs->capacity = new_cap;
+}
+
+void bitset_set(bitset *bs, size_t idx) {
+  uint8_t *byte = _bitset_byte(bs, idx);
+  if (byte == NULL) {
+    _bitset_grow(bs, (idx >> 3) + 1);
+    byte = _bitset_byte(bs, idx);
+
+    if (byte == NULL) {
+      perror("can't grow bitset");
+      exit(1);
+    }
+  }
+  uint8_t bit_idx = idx & 7;
+  *byte |= 1 << bit_idx;
+}
+
+#if defined(_MSC_VER)
+#include <intrin.h>
+#endif
+
+static inline uint8_t popcount8(uint8_t x) {
+#if defined(_MSC_VER)
+#pragma intrinsic(__popcnt)
+  return __popcnt(x);
+#elif defined(__GNUC__) || defined(__clang__)
+  return __builtin_popcount(x);
+#else
+  x = x - ((x >> 1) & 0x55);          // Count bits in each 2-bit group
+  x = (x & 0x33) + ((x >> 2) & 0x33); // Sum into 4-bit groups
+  x = (x + (x >> 4)) & 0x0F;          // Sum into 8-bit group, mask to 4 bits
+  return x;                           // Since result fits in low 4 bits
+#endif
+}
+
+size_t bitset_cardinality(bitset *bs) {
+  uint8_t *bytes = _bs_bytes_array(bs);
+  size_t total = 0;
+  for (size_t i = 0; i < bs->capacity; ++i) {
+    total += popcount8(bytes[i]); // room for improvement, I know!
+  }
+  return total;
+}
+
+void bitset_free(bitset *bs) {
+  free(bs);
+  bs = NULL;
+}

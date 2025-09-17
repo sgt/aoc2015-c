@@ -82,13 +82,40 @@ void test_hashtable_growth(void) {
   TEST_CHECK(m == NULL);
 }
 
+void test_bitset(void) {
+  bitset *bs = bitset_create(10);
+
+  for (int i = 1; i < 10; ++i) {
+    bitset_set(bs, i);
+    for (int j = 1; j < 10; ++j) {
+      if (j <= i) {
+        TEST_CHECK(bitset_get(bs, j));
+      } else {
+        TEST_CHECK(!bitset_get(bs, j));
+      }
+    }
+    TEST_CHECK(bitset_cardinality(bs) == i);
+  }
+
+  bitset_set(bs, 100);
+  TEST_CHECK(bitset_get(bs, 100));
+  TEST_CHECK(!bitset_get(bs, 0));
+  TEST_CHECK(!bitset_get(bs, 99));
+  TEST_CHECK(!bitset_get(bs, 199));
+  TEST_CHECK(bitset_cardinality(bs) == 10);
+
+  bitset_free(bs);
+}
+
+void test_bitset_ranges(void) {}
+
 void test_day05(void) {
   TEST_CHECK(is_nice("ugknbfddgicrmopn"));
   TEST_CHECK(is_nice("aaa"));
   TEST_CHECK(!is_nice("jchzalrnumimnmhp"));
   TEST_CHECK(!is_nice("haegwjzuvuyypxyu"));
   TEST_CHECK(!is_nice("dvszwmarrgswjxmb"));
-  
+
   TEST_CHECK(is_nice2("qjhvhtzxzqqjkmpb"));
   TEST_CHECK(is_nice2("xxyxx"));
   TEST_CHECK(!is_nice2("uurcxstgmygtbstg"));
@@ -100,6 +127,8 @@ void test_day05(void) {
 TEST_LIST = {{"dynamic array", test_dynamic_array},
              {"test hashtable duplication", test_hashtable_duplication},
              {"test hashtable growth", test_hashtable_growth},
+             {"test bitset", test_bitset},
+             {"test bitset ranges", test_bitset_ranges},
 
              {"test day 5", test_day05},
 
