@@ -246,25 +246,6 @@ static inline uint8_t *_bs_bytes_array(bitset *bs) {
 
 static inline size_t _bs_byte_idx(size_t idx) { return idx >> 3; }
 
-// Get pointer to byte containing bit number idx, or NULL if idx is over bitset
-// capacity.
-uint8_t *_bitset_byte(bitset *bs, size_t idx) {
-  size_t byte_idx = _bs_byte_idx(idx);
-  if (byte_idx > (bs->capacity - 1)) {
-    return NULL;
-  }
-  uint8_t *bytes = _bs_bytes_array(bs);
-  return &bytes[byte_idx];
-}
-
-bool bitset_get(bitset *bs, size_t idx) {
-  uint8_t *byte = _bitset_byte(bs, idx);
-  if (byte == NULL)
-    return false;
-  uint8_t bit_idx = idx & 7;
-  return *byte & (1 << bit_idx);
-}
-
 bitset *_bitset_grow(bitset *bs, size_t min_cap) {
   size_t new_cap = min_cap * DS_GROW_FACTOR;
   bs = realloc(bs, sizeof(bitset) + new_cap);
@@ -273,30 +254,34 @@ bitset *_bitset_grow(bitset *bs, size_t min_cap) {
   return bs;
 }
 
-void bitset_set(bitset **bs, size_t idx) {
-  uint8_t *byte = _bitset_byte(*bs, idx);
-  if (byte == NULL) {
+// Get pointer to byte containing bit number idx, growing the bitset if needed.
+uint8_t *_bitset_byte(bitset **bs, size_t idx) {
+  size_t byte_idx = _bs_byte_idx(idx);
+  if (byte_idx > ((*bs)->capacity - 1)) {
     *bs = _bitset_grow(*bs, (idx >> 3) + 1);
-    byte = _bitset_byte(*bs, idx);
-    if (byte == NULL) {
+    if (byte_idx > ((*bs)->capacity - 1)) {
       perror("can't grow bitset");
       exit(1);
     }
   }
+  uint8_t *bytes = _bs_bytes_array(*bs);
+  return &bytes[byte_idx];
+}
+
+bool bitset_get(bitset *bs, size_t idx) {
+  uint8_t *byte = _bitset_byte(&bs, idx);
+  uint8_t bit_idx = idx & 7;
+  return *byte & (1 << bit_idx);
+}
+
+void bitset_set(bitset **bs, size_t idx) {
+  uint8_t *byte = _bitset_byte(bs, idx);
   uint8_t bit_idx = idx & 7;
   *byte |= 1 << bit_idx;
 }
 
 void bitset_flip(bitset **bs, size_t idx) {
-  uint8_t *byte = _bitset_byte(*bs, idx);
-  if (byte == NULL) {
-    *bs = _bitset_grow(*bs, (idx >> 3) + 1);
-    byte = _bitset_byte(*bs, idx);
-    if (byte == NULL) {
-      perror("can't grow bitset");
-      exit(1);
-    }
-  }
+  uint8_t *byte = _bitset_byte(bs, idx);
   uint8_t bit_idx = idx & 7;
   *byte ^= 1 << bit_idx;
 }
