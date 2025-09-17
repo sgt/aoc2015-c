@@ -85,6 +85,10 @@ void test_hashtable_growth(void) {
 void test_bitset(void) {
   bitset *bs = bitset_create(10);
 
+  // getting value beyond capacity
+  TEST_CHECK(!bitset_get(bs, 12));
+
+  // setting
   for (int i = 1; i < 10; ++i) {
     bitset_set(&bs, i);
     for (int j = 1; j < 10; ++j) {
@@ -97,6 +101,7 @@ void test_bitset(void) {
     TEST_CHECK(bitset_cardinality(bs) == i);
   }
 
+  // setting and growing
   bitset_set(&bs, 100);
   TEST_CHECK(bitset_get(bs, 100));
   TEST_CHECK(!bitset_get(bs, 0));
@@ -104,12 +109,18 @@ void test_bitset(void) {
   TEST_CHECK(!bitset_get(bs, 199));
   TEST_CHECK(bitset_cardinality(bs) == 10);
 
+  // flipping
   bitset_flip(&bs, 200);
   TEST_CHECK(bitset_get(bs, 200));
   TEST_CHECK(bitset_cardinality(bs) == 11);
   bitset_flip(&bs, 200);
   TEST_CHECK(!bitset_get(bs, 200));
   TEST_CHECK(bitset_cardinality(bs) == 10);
+
+  // clearing
+  bitset_clear(bs, 100);
+  TEST_CHECK(!bitset_get(bs, 100));
+  TEST_CHECK(bitset_cardinality(bs) == 9);
 
   bitset_free(bs);
 }

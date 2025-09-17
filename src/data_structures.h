@@ -246,6 +246,10 @@ static inline uint8_t *_bs_bytes_array(bitset *bs) {
 
 static inline size_t _bs_byte_idx(size_t idx) { return idx >> 3; }
 
+static inline bool _bs_byte_idx_beyond_capacity(bitset *bs, size_t byte_idx) {
+  return byte_idx > (bs->capacity - 1);
+}
+
 bitset *_bitset_grow(bitset *bs, size_t min_cap) {
   size_t new_cap = min_cap * DS_GROW_FACTOR;
   bs = realloc(bs, sizeof(bitset) + new_cap);
@@ -254,34 +258,52 @@ bitset *_bitset_grow(bitset *bs, size_t min_cap) {
   return bs;
 }
 
-// Get pointer to byte containing bit number idx, growing the bitset if needed.
-uint8_t *_bitset_byte(bitset **bs, size_t idx) {
+// Get pointer to byte containing bit number idx, NULL if beyond capacity.
+uint8_t *_bitset_byte(bitset *bs, size_t idx) {
   size_t byte_idx = _bs_byte_idx(idx);
-  if (byte_idx > ((*bs)->capacity - 1)) {
-    *bs = _bitset_grow(*bs, (idx >> 3) + 1);
-    if (byte_idx > ((*bs)->capacity - 1)) {
-      perror("can't grow bitset");
-      exit(1);
-    }
+  if (_bs_byte_idx_beyond_capacity(bs, byte_idx)) {
+    return NULL;
   }
-  uint8_t *bytes = _bs_bytes_array(*bs);
+  uint8_t *bytes = _bs_bytes_array(bs);
   return &bytes[byte_idx];
 }
 
 bool bitset_get(bitset *bs, size_t idx) {
-  uint8_t *byte = _bitset_byte(&bs, idx);
+  if (_bs_byte_idx_beyond_capacity(bs, _bs_byte_idx(idx))) {
+    // it's zero anyway
+    return false;
+  }
+  uint8_t *byte = _bitset_byte(bs, idx);
   uint8_t bit_idx = idx & 7;
   return *byte & (1 << bit_idx);
 }
 
 void bitset_set(bitset **bs, size_t idx) {
-  uint8_t *byte = _bitset_byte(bs, idx);
+  uint8_t *byte = _bitset_byte(*bs, idx);
+  if (byte == NULL) {
+    *bs = _bitset_grow(*bs, (idx >> 3) + 1);
+    byte = _bitset_byte(*bs, idx);
+  }
   uint8_t bit_idx = idx & 7;
   *byte |= 1 << bit_idx;
 }
 
-void bitset_flip(bitset **bs, size_t idx) {
+void bitset_clear(bitset *bs, size_t idx) {
+  if (_bs_byte_idx_beyond_capacity(bs, _bs_byte_idx(idx))) {
+    // it's zero anyway
+    return;
+  }
   uint8_t *byte = _bitset_byte(bs, idx);
+  uint8_t bit_idx = idx & 7;
+  *byte &= ~(1 << bit_idx);
+}
+
+void bitset_flip(bitset **bs, size_t idx) {
+  uint8_t *byte = _bitset_byte(*bs, idx);
+  if (byte == NULL) {
+    *bs = _bitset_grow(*bs, (idx >> 3) + 1);
+    byte = _bitset_byte(*bs, idx);
+  }
   uint8_t bit_idx = idx & 7;
   *byte ^= 1 << bit_idx;
 }
