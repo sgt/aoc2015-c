@@ -89,38 +89,34 @@ void test_bitset(void) {
   TEST_CHECK(!bitset_get(bs, 12));
 
   // setting
-  for (int i = 1; i < 10; ++i) {
-    bitset_set(&bs, i);
-    for (int j = 1; j < 10; ++j) {
-      if (j <= i) {
-        TEST_CHECK(bitset_get(bs, j));
-      } else {
-        TEST_CHECK(!bitset_get(bs, j));
-      }
+  for (int i = 1; i < 20; ++i) {
+    bitset_set(bs, i);
+    for (int j = 1; j < 20; ++j) {
+      TEST_CHECK(bitset_get(bs, j) == (j <= i));
     }
     TEST_CHECK(bitset_cardinality(bs) == i);
   }
 
   // setting and growing
-  bitset_set(&bs, 100);
+  bitset_set(bs, 100);
   TEST_CHECK(bitset_get(bs, 100));
   TEST_CHECK(!bitset_get(bs, 0));
   TEST_CHECK(!bitset_get(bs, 99));
   TEST_CHECK(!bitset_get(bs, 199));
-  TEST_CHECK(bitset_cardinality(bs) == 10);
+  TEST_CHECK(bitset_cardinality(bs) == 20);
 
   // flipping
-  bitset_flip(&bs, 200);
+  bitset_flip(bs, 200);
   TEST_CHECK(bitset_get(bs, 200));
-  TEST_CHECK(bitset_cardinality(bs) == 11);
-  bitset_flip(&bs, 200);
+  TEST_CHECK(bitset_cardinality(bs) == 21);
+  bitset_flip(bs, 200);
   TEST_CHECK(!bitset_get(bs, 200));
-  TEST_CHECK(bitset_cardinality(bs) == 10);
+  TEST_CHECK(bitset_cardinality(bs) == 20);
 
   // clearing
   bitset_clear(bs, 100);
   TEST_CHECK(!bitset_get(bs, 100));
-  TEST_CHECK(bitset_cardinality(bs) == 9);
+  TEST_CHECK(bitset_cardinality(bs) == 19);
 
   bitset_free(bs);
 }
@@ -130,8 +126,10 @@ void test_bitset_ranges(void) {
 
   bitset_range_set(&bs, 6, 3);
   TEST_CHECK(bitset_cardinality(bs) == 3);
-  for (size_t i = 0; i < 10; i++) {
+  TEST_MSG("cardinality: %zu\n", bitset_cardinality(bs));
+  for (size_t i = 0; i < 16; i++) {
     TEST_CHECK(bitset_get(bs, i) == (i >= 6 && i <= 8));
+    TEST_MSG("i: %zu bit: %d\n", i, bitset_get(bs,i));
   }
 
   bitset_free(bs);

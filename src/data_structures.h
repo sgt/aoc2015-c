@@ -229,125 +229,173 @@ void _ht_buckets_grow_if_needed(_ArrHeader *arr_hdr, size_t size,
 // ==== Bitset ====
 
 typedef struct {
-  size_t capacity; // bytes allocated for bitset, right after this header
+  size_t u8_capacity; // bytes allocated for bitset, right after this header
 } bitset;
 
-size_t _next_power_of_2(size_t n) { return (n >> 1) << 2; }
+// Get index of byte containing specified bit.
+static inline size_t _bs_u8_idx(size_t u1_idx) { return u1_idx >> 3; }
 
-bitset *bitset_create(size_t bit_capacity) {
-  size_t byte_capacity = (bit_capacity >> 3) + 1;
-  bitset *bs = calloc(sizeof(bitset) + byte_capacity, 1);
-  bs->capacity = byte_capacity;
+// Create new bitset with at least specified capacity in bits.
+bitset *bitset_create(size_t u1_capacity) {
+  size_t u8_capacity = _bs_u8_idx(u1_capacity) + 1;
+  bitset *bs = calloc(sizeof(bitset) + u8_capacity, 1);
+  bs->u8_capacity = u8_capacity;
   return bs;
 }
 
+// Get pointer to array containing data bytes.
 static inline uint8_t *_bs_bytes_array(bitset *bs) {
   return (uint8_t *)(bs + 1);
 }
 
-static inline size_t _bs_byte_idx(size_t idx) { return idx >> 3; }
-
-static inline bool _bs_byte_idx_beyond_capacity(bitset *bs, size_t byte_idx) {
-  return byte_idx > (bs->capacity - 1);
+static inline bool _bs_is_byte_idx_beyond_capacity(bitset *bs, size_t u8_idx) {
+  return u8_idx > (bs->u8_capacity - 1);
 }
 
 // min_cap is in bits
-bitset *_bitset_grow(bitset *bs, size_t min_bit_cap) {
-  size_t min_byte_cap = (min_bit_cap >> 3) + 1;
-  size_t new_byte_cap = min_byte_cap * DS_GROW_FACTOR;
-  bs = realloc(bs, sizeof(bitset) + new_byte_cap);
-  memset(_bs_bytes_array(bs) + bs->capacity, 0, new_byte_cap - bs->capacity);
-  bs->capacity = new_byte_cap;
+bitset *_bitset_grow(bitset *bs, size_t u1_min_cap) {
+  size_t u8_min_cap = _bs_u8_idx(u1_min_cap) + 1;
+  size_t u8_new_cap = u8_min_cap * DS_GROW_FACTOR;
+  bs = realloc(bs, sizeof(bitset) + u8_new_cap);
+  memset(_bs_bytes_array(bs) + bs->u8_capacity, 0,
+         u8_new_cap - bs->u8_capacity);
+  bs->u8_capacity = u8_new_cap;
   return bs;
 }
 
 // Get pointer to byte containing bit number idx, NULL if beyond capacity.
-uint8_t *_bitset_byte(bitset *bs, size_t idx) {
-  size_t byte_idx = _bs_byte_idx(idx);
-  if (_bs_byte_idx_beyond_capacity(bs, byte_idx)) {
+uint8_t *_bitset_byte(bitset *bs, size_t u1_idx) {
+  size_t byte_idx = _bs_u8_idx(u1_idx);
+  if (_bs_is_byte_idx_beyond_capacity(bs, byte_idx)) {
     return NULL;
   }
   uint8_t *bytes = _bs_bytes_array(bs);
   return &bytes[byte_idx];
 }
 
-bool bitset_get(bitset *bs, size_t idx) {
-  if (_bs_byte_idx_beyond_capacity(bs, _bs_byte_idx(idx))) {
+// Get specified bit's value.
+bool bitset_get(bitset *bs, size_t u1_idx) {
+  if (_bs_is_byte_idx_beyond_capacity(bs, _bs_u8_idx(u1_idx))) {
     // it's zero anyway
     return false;
   }
-  uint8_t *byte = _bitset_byte(bs, idx);
-  uint8_t bit_idx = idx & 7;
-  return *byte & (1 << bit_idx);
+  uint8_t *byte = _bitset_byte(bs, u1_idx);
+  uint8_t u1_local_idx = u1_idx % 8;
+  return *byte & (1 << u1_local_idx);
 }
 
-void bitset_set(bitset **bs, size_t idx) {
-  uint8_t *byte = _bitset_byte(*bs, idx);
+// Set specified bit's value to 1, mutating the bitset.
+void _bitset_set(bitset **bs, size_t u1_idx) {
+  uint8_t *byte = _bitset_byte(*bs, u1_idx);
   if (byte == NULL) {
-    *bs = _bitset_grow(*bs, idx + 1);
-    byte = _bitset_byte(*bs, idx);
+    *bs = _bitset_grow(*bs, u1_idx + 1);
+    byte = _bitset_byte(*bs, u1_idx);
   }
-  uint8_t bit_idx = idx & 7;
-  *byte |= 1 << bit_idx;
+  uint8_t u1_local_idx = u1_idx % 8;
+  *byte |= 1 << u1_local_idx;
 }
 
-void bitset_clear(bitset *bs, size_t idx) {
-  if (_bs_byte_idx_beyond_capacity(bs, _bs_byte_idx(idx))) {
+// Set specified bit's value to 1.
+#define bitset_set(bs, u1_idx) _bitset_set(&(bs), (u1_idx))
+
+// Set specified bit's value to 0.
+void bitset_clear(bitset *bs, size_t u1_idx) {
+  if (_bs_is_byte_idx_beyond_capacity(bs, _bs_u8_idx(u1_idx))) {
     // it's zero anyway
     return;
   }
-  uint8_t *byte = _bitset_byte(bs, idx);
-  uint8_t bit_idx = idx & 7;
-  *byte &= ~(1 << bit_idx);
+  uint8_t *byte = _bitset_byte(bs, u1_idx);
+  uint8_t u1_local_idx = u1_idx % 8;
+  *byte &= ~(1 << u1_local_idx);
 }
 
-void bitset_flip(bitset **bs, size_t idx) {
-  uint8_t *byte = _bitset_byte(*bs, idx);
+// Flip specified bit's value 0 => 1 => 0, mutating the bitset.
+void _bitset_flip(bitset **bs, size_t u1_idx) {
+  uint8_t *byte = _bitset_byte(*bs, u1_idx);
   if (byte == NULL) {
-    *bs = _bitset_grow(*bs, idx + 1);
-    byte = _bitset_byte(*bs, idx);
+    *bs = _bitset_grow(*bs, u1_idx + 1);
+    byte = _bitset_byte(*bs, u1_idx);
   }
-  uint8_t bit_idx = idx & 7;
+  uint8_t bit_idx = u1_idx % 8;
   *byte ^= 1 << bit_idx;
 }
+
+// Flip specified bit's value 0 => 1 => 0, mutating the bitset.
+#define bitset_flip(bs, u1_idx) _bitset_flip(&(bs), (u1_idx))
 
 #if defined(_MSC_VER)
 #include <intrin.h>
 #endif
 
-static inline uint8_t popcount8(uint8_t x) {
+static inline uint8_t _popcount8(uint8_t x) {
 #if defined(_MSC_VER)
 #pragma intrinsic(__popcnt)
   return __popcnt(x);
 #elif defined(__GNUC__) || defined(__clang__)
   return __builtin_popcount(x);
 #else
-  x = x - ((x >> 1) & 0x55);          // Count bits in each 2-bit group
-  x = (x & 0x33) + ((x >> 2) & 0x33); // Sum into 4-bit groups
-  x = (x + (x >> 4)) & 0x0F;          // Sum into 8-bit group, mask to 4 bits
-  return x;                           // Since result fits in low 4 bits
+  static const uint8_t _BIT_COUNT[16] = {0, 1, 1, 2, 1, 2, 2, 3,
+                                         1, 2, 2, 3, 2, 3, 3, 4};
+  return _BIT_COUNT[x & 0x0f] + _BIT_COUNT[x >> 4];
 #endif
 }
 
+// Return number of set bits in whole bitset.
 size_t bitset_cardinality(bitset *bs) {
   uint8_t *bytes = _bs_bytes_array(bs);
   size_t total = 0;
-  for (size_t i = 0; i < bs->capacity; ++i) {
-    total += popcount8(bytes[i]); // room for improvement, I know!
+  for (size_t i = 0; i < bs->u8_capacity; ++i) {
+    total += _popcount8(bytes[i]); // room for improvement, I know!
   }
   return total;
 }
 
+// Dispose of bitset.
 void bitset_free(bitset *bs) {
   free(bs);
   bs = NULL;
 }
 
-void bitset_range_set(bitset **bs, size_t idx, size_t length) {
-  size_t last_idx = idx + length - 1;
-  size_t byte_idx = _bs_byte_idx(last_idx);
-  size_t last_byte_idx = _bs_byte_idx(last_idx);
-  if (_bs_byte_idx_beyond_capacity(*bs, last_byte_idx)) {
-    *bs = _bitset_grow(*bs, last_byte_idx + 1);
+typedef enum { SET, CLEAR, FLIP } _bs_range_op;
+
+// Set a contiguous range of bits to 1.
+void bitset_range_set(bitset **bs, size_t bit_idx, size_t length) {
+  if (length < 1)
+    return;
+
+  size_t last_bit_idx = bit_idx + length - 1;
+  size_t start_byte_idx = _bs_u8_idx(bit_idx);
+  size_t last_byte_idx = _bs_u8_idx(last_bit_idx);
+  if (_bs_is_byte_idx_beyond_capacity(*bs, last_byte_idx)) {
+    *bs = _bitset_grow(*bs, last_bit_idx + 1);
   }
+
+  uint8_t *bytes = _bs_bytes_array(*bs);
+
+  // all within one byte
+  if (start_byte_idx == last_byte_idx) {
+    // TODO set one by one, too lazy to whip up a bitwise op
+    for (int i = bit_idx; i <= last_bit_idx; ++i) {
+      bitset_set(*bs, i);
+    }
+    return;
+  }
+
+  // first byte
+  uint8_t first_bit_in_first_byte = bit_idx % 8;
+  uint8_t first_byte_mask = 0xff << first_bit_in_first_byte;
+  bytes[start_byte_idx] |= first_byte_mask;
+
+  // middle bytes
+  for (size_t i = start_byte_idx + 1; i < last_byte_idx; ++i) {
+    bytes[i] = 0xff;
+  }
+
+  // last_byte
+  uint8_t last_bit_in_last_byte = last_bit_idx % 8;
+  uint8_t last_byte_mask = 0xff >> (7 - last_bit_in_last_byte); // TODO wrong
+  bytes[last_byte_idx] |= last_byte_mask;
 }
+
+// 0000_0001 1110_0000
+// set bits 7..10 (length 4)
