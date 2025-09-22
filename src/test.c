@@ -84,6 +84,50 @@ void test_hashtable_growth(void) {
   TEST_CHECK(m == NULL);
 }
 
+void test_string_hashtable_duplication(void) {
+  struct {
+    char *key;
+    int value;
+  } *m = NULL;
+
+  char *k = "foo";
+  char *k2 = "boulbasaurus";
+
+  sht_put(m, k, 1);
+  TEST_CHECK(sht_size(m) == 1);
+  TEST_CHECK(sht_get(m, k) == 1);
+  sht_put(m, k, 2);
+  TEST_CHECK(sht_size(m) == 1);
+  TEST_CHECK(sht_get(m, k) == 2);
+  sht_put(m, k2, 3);
+  TEST_CHECK(sht_size(m) == 2);
+  TEST_CHECK(sht_get(m, k) == 2);
+  TEST_CHECK(sht_get(m, k2) == 3);
+  sht_free(m);
+  TEST_CHECK(m == NULL);
+}
+
+void test_string_hashtable_growth(void) {
+  struct {
+    char *key;
+    int value;
+  } *m = NULL;
+
+  TEST_CHECK(!sht_has(m, "foo"));
+  for (int i = 1; i <= 200; ++i) {
+    char key[16];
+    sprintf(key, "meow%d", i);
+    int val = i;
+    sht_put(m, key, val);
+  }
+  TEST_CHECK(sht_size(m) == 200);
+  TEST_CHECK(sht_has(m, "meow20"));
+  TEST_CHECK(!sht_has(m, "meow300"));
+  TEST_CHECK(sht_get(m, "meow42") == 42);
+  sht_free(m);
+  TEST_CHECK(m == NULL);
+}
+
 void test_bitset(void) {
   bitset *bs = bitset_create(5);
 
@@ -189,13 +233,16 @@ void test_day06(void) {
   }
 }
 
-TEST_LIST = {{"dynamic array", test_dynamic_array},
-             {"test hashtable duplication", test_hashtable_duplication},
-             {"test hashtable growth", test_hashtable_growth},
-             {"test bitset", test_bitset},
-             {"test bitset ranges", test_bitset_ranges},
+TEST_LIST = {
+    {"dynamic array", test_dynamic_array},
+    {"test hashtable duplication", test_hashtable_duplication},
+    {"test hashtable growth", test_hashtable_growth},
+    {"test string hashtable duplication", test_string_hashtable_duplication},
+    {"test string hashtable growth", test_string_hashtable_growth},
+    {"test bitset", test_bitset},
+    {"test bitset ranges", test_bitset_ranges},
 
-             {"test day 5", test_day05},
-             {"test day 6", test_day06},
+    {"test day 5", test_day05},
+    {"test day 6", test_day06},
 
-             {NULL, NULL}};
+    {NULL, NULL}};

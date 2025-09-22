@@ -9,13 +9,15 @@ For usage examples, see test.c
 
 #pragma once
 
+#define _CRT_SECURE_NO_WARNINGS 1
+
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
-#define DS_INITIAL_CAPACITY 1024 * 1024 // must be power of 2
-#define DS_GROW_FACTOR 2                // also must be power of 2
+#define DS_INITIAL_CAPACITY 1024 // must be power of 2
+#define DS_GROW_FACTOR 2         // also must be power of 2
 
 // ==== Dynamic Array (append only) ====
 
@@ -225,8 +227,81 @@ void _ht_buckets_grow_if_needed(_ArrHeader *arr_hdr, size_t size,
         free(b_hdr);                                                           \
         b_hdr = NULL;                                                          \
       }                                                                        \
+                                                                               \
+      arr_free(arr);                                                           \
     }                                                                          \
-    arr_free(arr);                                                             \
+  }
+
+// ==== String Hashtable ====
+// (hash table with C-style string as key )
+// copies and owns its keys
+
+// FNV hash for strings
+uint64_t hash_string(const char *data) {
+  uint64_t hash = 14695981039346656037ULL;
+  for (auto i = 0; data[i] != '\0'; ++i) {
+    hash ^= data[i];
+    hash *= 1099511628211ULL;
+  }
+  return hash;
+}
+
+#define sht_get_idx(arr, k)                                                    \
+  ((arr) ? _ht_get_idx_from_bucket(_ht_header(arr), hash_string(k)) : -1)
+
+#define sht_get(arr, k) ((arr)[sht_get_idx((arr), (k))].value)
+
+#define sht_get_or(arr, k, def)                                                \
+  (sht_get_idx((arr), (k)) == -1 ? (def) : sht_get((arr), (k)))
+
+#define sht_has(arr, k) ((arr) != NULL && sht_get_idx((arr), (k)) >= 0)
+
+#define sht_size ht_size
+
+#define sht_put(arr, k, v)                                                     \
+  {                                                                            \
+    bool new_key;                                                              \
+    uint64_t h = hash_string(k);                                               \
+    if (arr) {                                                                 \
+      ptrdiff_t idx = _ht_get_idx_from_bucket(_ht_header(arr), h);             \
+      if (idx >= 0) {                                                          \
+        (arr)[idx].value = (v);                                                \
+        new_key = false;                                                       \
+      } else {                                                                 \
+        new_key = true;                                                        \
+      }                                                                        \
+    } else {                                                                   \
+      new_key = true;                                                          \
+    }                                                                          \
+    if (new_key) {                                                             \
+      auto key_len = strlen(k);                                                \
+      char *key_copy = malloc(key_len + 1);                                    \
+      if (key_copy == NULL) {                                                  \
+        perror("memory allocation error");                                     \
+        exit(1);                                                               \
+      }                                                                        \
+      strncpy(key_copy, k, key_len + 1);                                       \
+      typeof(*arr) item = (typeof(*arr)){.key = (key_copy), .value = (v)};     \
+      arr_push((arr), item);                                                   \
+      _ht_buckets_grow_if_needed(_arr_header(arr), ht_size(arr),               \
+                                 DS_GROW_FACTOR);                              \
+      _ht_put_in_bucket(_arr_header(arr)->hashtable, h, ht_size(arr) - 1);     \
+    }                                                                          \
+  }
+
+#define sht_free(arr)                                                          \
+  {                                                                            \
+    if (arr) {                                                                 \
+      for (auto i = 0; i < sht_size(arr); ++i) {                               \
+        free(arr[i].key);                                                      \
+      }                                                                        \
+      _HTBucketsHeader *b_hdr = (_arr_header(arr))->hashtable;                 \
+      if (b_hdr) {                                                             \
+        free(b_hdr);                                                           \
+        b_hdr = NULL;                                                          \
+      }                                                                        \
+      arr_free(arr);                                                           \
+    }                                                                          \
   }
 
 // ==== Bitset ====
