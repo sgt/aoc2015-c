@@ -124,14 +124,43 @@ void test_bitset(void) {
 void test_bitset_ranges(void) {
   bitset *bs = bitset_create(5);
 
-  bitset_range_set(&bs, 6, 3);
-  TEST_CHECK(bitset_cardinality(bs) == 3);
-  TEST_MSG("cardinality: %zu\n", bitset_cardinality(bs));
-  for (size_t i = 0; i < 16; i++) {
-    TEST_CHECK(bitset_get(bs, i) == (i >= 6 && i <= 8));
-    TEST_MSG("i: %zu bit: %d\n", i, bitset_get(bs,i));
+  {
+    // set bits 5,..20
+    bitset_range_set(bs, 5, 16);
+    TEST_CHECK(bitset_cardinality(bs) == 16);
+    TEST_MSG("cardinality: %zu\n", bitset_cardinality(bs));
+    for (size_t i = 0; i < 24; i++) {
+      TEST_CHECK(bitset_get(bs, i) == (i >= 5 && i <= 20));
+      TEST_MSG("i: %zu bit: %d\n", i, bitset_get(bs, i));
+    }
   }
 
+  {
+    // clear bits 6..18
+    bitset_range_clear(bs, 6, 13);
+    TEST_CHECK(bitset_cardinality(bs) == 3);
+    TEST_MSG("cardinality: %zu\n", bitset_cardinality(bs));
+    for (size_t i = 0; i < 24; i++) {
+      TEST_CHECK(bitset_get(bs, i) == (i == 5 || (i >= 19 && i <= 20)));
+      TEST_MSG("i: %zu bit: %d\n", i, bitset_get(bs, i));
+    }
+  }
+
+  bitset_free(bs);
+
+  // flip
+  bs = bitset_create(16);
+  // set bits 5..12
+  bitset_range_set(bs, 5, 8);
+  TEST_CHECK(bitset_cardinality(bs) == 8);
+  // flip bits 3..10
+  bitset_range_flip(bs, 3, 8);
+  // bits set now are 3..4, 11..12
+  TEST_CHECK(bitset_cardinality(bs) == 4);
+  for (size_t i = 0; i < 16; i++) {
+    TEST_CHECK(bitset_get(bs, i) == (i == 3 || i == 4 || i == 11 || i == 12));
+    TEST_MSG("i: %zu bit: %d\n", i, bitset_get(bs, i));
+  }
   bitset_free(bs);
 }
 

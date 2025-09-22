@@ -359,7 +359,8 @@ void bitset_free(bitset *bs) {
 typedef enum { SET, CLEAR, FLIP } _bs_range_op;
 
 // Set a contiguous range of bits to 1.
-void bitset_range_set(bitset **bs, size_t bit_idx, size_t length) {
+void _bitset_range_do(_bs_range_op op, bitset **bs, size_t bit_idx,
+                      size_t length) {
   if (length < 1)
     return;
 
@@ -376,26 +377,76 @@ void bitset_range_set(bitset **bs, size_t bit_idx, size_t length) {
   if (start_byte_idx == last_byte_idx) {
     // TODO set one by one, too lazy to whip up a bitwise op
     for (int i = bit_idx; i <= last_bit_idx; ++i) {
-      bitset_set(*bs, i);
+      switch (op) {
+      case SET:
+        bitset_set(*bs, i);
+        break;
+      case CLEAR:
+        bitset_clear(*bs, i);
+        break;
+      case FLIP:
+        bitset_flip(*bs, i);
+        break;
+      }
     }
     return;
   }
 
   // first byte
   uint8_t first_bit_in_first_byte = bit_idx % 8;
-  uint8_t first_byte_mask = 0xff << first_bit_in_first_byte;
-  bytes[start_byte_idx] |= first_byte_mask;
+  switch (op) {
+  case SET:
+    uint8_t first_byte_mask = 0xff << first_bit_in_first_byte;
+    bytes[start_byte_idx] |= first_byte_mask;
+    break;
+  case CLEAR:
+    first_byte_mask = ~(0xff << first_bit_in_first_byte);
+    bytes[start_byte_idx] &= first_byte_mask;
+    break;
+  case FLIP:
+    first_byte_mask = 0xff << first_bit_in_first_byte;
+    bytes[start_byte_idx] ^= first_byte_mask;
+    break;
+  }
 
   // middle bytes
   for (size_t i = start_byte_idx + 1; i < last_byte_idx; ++i) {
-    bytes[i] = 0xff;
+    switch (op) {
+    case SET:
+      bytes[i] = 0xff;
+      break;
+    case CLEAR:
+      bytes[i] = 0x00;
+      break;
+    case FLIP:
+      bytes[i] = ~bytes[i];
+      break;
+    }
   }
 
   // last_byte
   uint8_t last_bit_in_last_byte = last_bit_idx % 8;
-  uint8_t last_byte_mask = 0xff >> (7 - last_bit_in_last_byte); // TODO wrong
-  bytes[last_byte_idx] |= last_byte_mask;
+  switch (op) {
+  case SET:
+    uint8_t last_byte_mask = 0xff >> (7 - last_bit_in_last_byte);
+    bytes[last_byte_idx] |= last_byte_mask;
+    break;
+  case CLEAR:
+    last_byte_mask = ~(0xff >> (7 - last_bit_in_last_byte));
+    bytes[last_byte_idx] &= last_byte_mask;
+    break;
+  case FLIP:
+    last_byte_mask = 0xff >> (7 - last_bit_in_last_byte);
+    bytes[last_byte_idx] ^= last_byte_mask;
+    break;
+  }
 }
 
-// 0000_0001 1110_0000
-// set bits 7..10 (length 4)
+#define bitset_range_set(bs, bit_idx, length)                                  \
+  _bitset_range_do(SET, &(bs), (bit_idx), (length))
+
+#define bitset_range_clear(bs, bit_idx, length)                                \
+  _bitset_range_do(CLEAR, &(bs), (bit_idx), (length))
+
+#define bitset_range_flip(bs, bit_idx, length)                                 \
+  _bitset_range_do(FLIP, &(bs), (bit_idx), (length))
