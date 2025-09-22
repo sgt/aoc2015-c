@@ -41,6 +41,7 @@ void test_dynamic_array(void) {
 typedef struct {
   int x, y;
 } pair;
+
 void test_hashtable_duplication(void) {
   struct {
     pair key;
@@ -182,11 +183,9 @@ void test_day05(void) {
 
 void test_day06(void) {
   {
-    bitset *bs = bitset_create(1000 * 1000);
-    day06_perform_cmd(&bs, "turn on", 0, 0, 999, 999);
-    TEST_CHECK(bitset_cardinality(bs) == 1000 * 1000);
-    TEST_MSG("cardinality: %d",bitset_cardinality(bs) == 1000 * 1000);
-    bitset_free(bs);
+    uint8_t arr[1000 * 1000] = {0};
+    day06_perform_cmd(arr, PART1, "turn on", 0, 0, 999, 999);
+    TEST_CHECK(day06_total(arr) == 1000 * 1000);
   }
 }
 

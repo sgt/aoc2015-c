@@ -14,8 +14,8 @@ For usage examples, see test.c
 #include <stdlib.h>
 #include <string.h>
 
-#define DS_INITIAL_CAPACITY (2 ^ 10) // must be power of 2
-#define DS_GROW_FACTOR 2             // also must be power of 2
+#define DS_INITIAL_CAPACITY 1024 * 1024 // must be power of 2
+#define DS_GROW_FACTOR 2                // also must be power of 2
 
 // ==== Dynamic Array (append only) ====
 
@@ -183,7 +183,10 @@ void _ht_buckets_grow_if_needed(_ArrHeader *arr_hdr, size_t size,
   ((arr) ? _ht_get_idx_from_bucket(_ht_header(arr), _key_hash(k)) : -1)
 
 // Get the value corresponding to the key.
-#define ht_get(arr, k) ((arr)[ht_get_idx(arr, k)].value)
+#define ht_get(arr, k) ((arr)[ht_get_idx((arr), (k))].value)
+
+#define ht_get_or(arr, k, def)                                                 \
+  (ht_get_idx((arr), (k)) == -1 ? (def) : ht_get((arr), (k)))
 
 // True if the hashtable contains a value associated with the key.
 #define ht_has(arr, k) ((arr) != NULL && ht_get_idx((arr), (k)) >= 0)

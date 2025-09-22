@@ -36,4 +36,6 @@ Hashtable for the rescue again (although this one probably could have been done 
 
 ### Day 6
 
-This one called for a bitset, which I had to implement from scratch (I know there is much room for preformance improvement in my half-assed implementation, but it does the job).
+~~This one called for a bitset, which I had to implement from scratch (I know there is much room for preformance improvement in my half-assed implementation, but it does the job).~~
+
+Turns out bitset is useless for part two, so I rewrote it to use a regular 2d array of bytes.

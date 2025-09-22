@@ -13,21 +13,45 @@ bs_range_op parse_cmd(char *cmd) {
   return CLEAR;
 }
 
-void day06_perform_cmd(bitset **bs, char *cmd, uint16_t x1, uint16_t y1,
-                       uint16_t x2, uint16_t y2) {
+void day06_perform_cmd(uint8_t *arr, solution_part part, char *cmd,
+                       uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
+  auto op = parse_cmd(cmd);
   for (auto y = y1; y <= y2; ++y) {
-    switch (parse_cmd(cmd)) {
-    case SET:
-      bitset_range_set(*bs, x1 + y * 1000, x2 - x1 + 1);
-      break;
-    case CLEAR:
-      bitset_range_clear(*bs, x1 + y * 1000, x2 - x1 + 1);
-      break;
-    case FLIP:
-      bitset_range_flip(*bs, x1 + y * 1000, x2 - x1 + 1);
-      break;
+    for (auto x = x1; x <= x2; ++x) {
+      auto elem = arr + x + y * 1000;
+      switch (op) {
+      case SET:
+        if (part == PART1) {
+          *elem = 1;
+        } else {
+          *elem += 1;
+        }
+        break;
+      case CLEAR:
+        if (part == PART1) {
+          *elem = 0;
+        } else {
+          *elem = (*elem == 0) ? 0 : *elem - 1;
+        }
+        break;
+      case FLIP:
+        if (part == PART1) {
+          *elem = (*elem == 0) ? 1 : 0;
+        } else {
+          *elem += 2;
+        }
+        break;
+      }
     }
   }
+}
+
+int32_t day06_total(uint8_t *arr) {
+  uint32_t result = 0;
+  for (auto i = 0; i < 1000 * 1000; ++i) {
+    result += arr[i];
+  }
+  return result;
 }
 
 uint32_t day6(const solution_part part) {
@@ -37,7 +61,7 @@ uint32_t day6(const solution_part part) {
     return -1;
   }
 
-  bitset *bs = bitset_create(1000 * 1000);
+  uint8_t arr[1000 * 1000] = {0};
   char line[128];
   while (fgets(line, 100, f) != NULL) {
     char cmd[32];
@@ -47,11 +71,10 @@ uint32_t day6(const solution_part part) {
       fprintf(stderr, "couldn't parse line: '%s'", line);
       exit(1);
     }
-    day06_perform_cmd(&bs, cmd, x1, y1, x2, y2);
+    day06_perform_cmd(arr, part, cmd, x1, y1, x2, y2);
   }
   fclose(f);
-
-  return bitset_cardinality(bs);
+  return day06_total(arr);
 }
 
 uint32_t day6_part1() { return day6(PART1); }
