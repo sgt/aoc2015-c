@@ -69,6 +69,8 @@ bool is_nice2(const char *s) {
     prev = c;
   }
 
+  ht_free(m);
+
   return contains_two_pairs && contains_xyx;
 }
 
