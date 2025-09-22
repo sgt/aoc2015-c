@@ -8,17 +8,17 @@
 /*
  * Constants defined by the MD5 algorithm
  */
-#define A 0x67452301
-#define B 0xefcdab89
-#define C 0x98badcfe
-#define D 0x10325476
+#define MD5_A 0x67452301
+#define MD5_B 0xefcdab89
+#define MD5_C 0x98badcfe
+#define MD5_D 0x10325476
 
-static uint32_t S[] = {7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
+static uint32_t MD5_S[] = {7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
                        5,  9, 14, 20, 5,  9, 14, 20, 5,  9, 14, 20, 5,  9, 14, 20,
                        4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23,
                        6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21};
 
-static uint32_t K[] = {0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee,
+static uint32_t MD5_K[] = {0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee,
                        0xf57c0faf, 0x4787c62a, 0xa8304613, 0xfd469501,
                        0x698098d8, 0x8b44f7af, 0xffff5bb1, 0x895cd7be,
                        0x6b901122, 0xfd987193, 0xa679438e, 0x49b40821,
@@ -69,10 +69,10 @@ uint32_t rotateLeft(uint32_t x, uint32_t n){
 void md5Init(MD5Context *ctx){
     ctx->size = (uint64_t)0;
 
-    ctx->buffer[0] = (uint32_t)A;
-    ctx->buffer[1] = (uint32_t)B;
-    ctx->buffer[2] = (uint32_t)C;
-    ctx->buffer[3] = (uint32_t)D;
+    ctx->buffer[0] = (uint32_t)MD5_A;
+    ctx->buffer[1] = (uint32_t)MD5_B;
+    ctx->buffer[2] = (uint32_t)MD5_C;
+    ctx->buffer[3] = (uint32_t)MD5_D;
 }
 
 /*
@@ -181,7 +181,7 @@ void md5Step(uint32_t *buffer, uint32_t *input){
         uint32_t temp = DD;
         DD = CC;
         CC = BB;
-        BB = BB + rotateLeft(AA + E + K[i] + input[j], S[i]);
+        BB = BB + rotateLeft(AA + E + MD5_K[i] + input[j], MD5_S[i]);
         AA = temp;
     }
 
