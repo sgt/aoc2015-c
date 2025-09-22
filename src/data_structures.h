@@ -356,11 +356,11 @@ void bitset_free(bitset *bs) {
   bs = NULL;
 }
 
-typedef enum { SET, CLEAR, FLIP } _bs_range_op;
+typedef enum { SET, CLEAR, FLIP } bs_range_op;
 
 // Set a contiguous range of bits to 1.
-void _bitset_range_do(_bs_range_op op, bitset **bs, size_t bit_idx,
-                      size_t length) {
+void _bitset_range_do(const bs_range_op op, bitset **bs, const size_t bit_idx,
+                      const size_t length) {
   if (length < 1)
     return;
 

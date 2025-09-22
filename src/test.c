@@ -2,6 +2,7 @@
 
 #include "data_structures.h"
 #include "day05.h"
+#include "day06.h"
 #include <stdint.h>
 
 #define TEST_DYN_ARRAY(type)                                                   \
@@ -179,6 +180,16 @@ void test_day05(void) {
   TEST_CHECK(is_nice2("aaaa"));
 }
 
+void test_day06(void) {
+  {
+    bitset *bs = bitset_create(1000 * 1000);
+    day06_perform_cmd(&bs, "turn on", 0, 0, 999, 999);
+    TEST_CHECK(bitset_cardinality(bs) == 1000 * 1000);
+    TEST_MSG("cardinality: %d",bitset_cardinality(bs) == 1000 * 1000);
+    bitset_free(bs);
+  }
+}
+
 TEST_LIST = {{"dynamic array", test_dynamic_array},
              {"test hashtable duplication", test_hashtable_duplication},
              {"test hashtable growth", test_hashtable_growth},
@@ -186,5 +197,6 @@ TEST_LIST = {{"dynamic array", test_dynamic_array},
              {"test bitset ranges", test_bitset_ranges},
 
              {"test day 5", test_day05},
+             {"test day 6", test_day06},
 
              {NULL, NULL}};
