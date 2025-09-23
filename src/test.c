@@ -3,6 +3,7 @@
 #include "data_structures.h"
 #include "day05.h"
 #include "day06.h"
+// #include "day07.h"
 #include <stdint.h>
 
 #define TEST_DYN_ARRAY(type)                                                   \
@@ -96,6 +97,8 @@ void test_string_hashtable_duplication(void) {
   sht_put(m, k, 1);
   TEST_CHECK(sht_size(m) == 1);
   TEST_CHECK(sht_get(m, k) == 1);
+  TEST_CHECK(sht_get_or(m, k, -1) == 1);
+  TEST_CHECK(sht_get_or(m, k2, -1) == -1);
   sht_put(m, k, 2);
   TEST_CHECK(sht_size(m) == 1);
   TEST_CHECK(sht_get(m, k) == 2);
@@ -233,6 +236,27 @@ void test_day06(void) {
   }
 }
 
+// void test_day07(void) {
+//   day07_elem *m = NULL;
+//   day07_process_line(&m, "123 -> x");
+//   day07_process_line(&m, "456 -> y");
+//   day07_process_line(&m, "x AND y -> d");
+//   day07_process_line(&m, "x OR y -> e");
+//   day07_process_line(&m, "x LSHIFT 2 -> f");
+//   day07_process_line(&m, "y RSHIFT 2 -> g");
+//   day07_process_line(&m, "NOT x -> h");
+//   day07_process_line(&m, "NOT y -> i");
+//   TEST_CHECK(sht_get(m, "d") == 72);
+//   TEST_CHECK(sht_get(m, "e") == 507);
+//   TEST_CHECK(sht_get(m, "f") == 492);
+//   TEST_CHECK(sht_get(m, "g") == 114);
+//   TEST_CHECK(sht_get(m, "h") == 65412);
+//   TEST_CHECK(sht_get(m, "i") == 65079);
+//   TEST_CHECK(sht_get(m, "x") == 123);
+//   TEST_CHECK(sht_get(m, "y") == 456);
+//   sht_free(m);
+// }
+
 TEST_LIST = {
     {"dynamic array", test_dynamic_array},
     {"test hashtable duplication", test_hashtable_duplication},
@@ -244,5 +268,6 @@ TEST_LIST = {
 
     {"test day 5", test_day05},
     {"test day 6", test_day06},
+    // {"test day 7", test_day07},
 
     {NULL, NULL}};

@@ -9,7 +9,10 @@ For usage examples, see test.c
 
 #pragma once
 
+#ifdef _WIN32
 #define _CRT_SECURE_NO_WARNINGS 1
+#define strdup _strdup
+#endif
 
 #include <stddef.h>
 #include <stdint.h>
@@ -274,13 +277,11 @@ uint64_t hash_string(const char *data) {
       new_key = true;                                                          \
     }                                                                          \
     if (new_key) {                                                             \
-      auto key_len = strlen(k);                                                \
-      char *key_copy = malloc(key_len + 1);                                    \
+      char *key_copy = strdup(k);                                              \
       if (key_copy == NULL) {                                                  \
         perror("memory allocation error");                                     \
         exit(1);                                                               \
       }                                                                        \
-      strncpy(key_copy, k, key_len + 1);                                       \
       typeof(*arr) item = (typeof(*arr)){.key = (key_copy), .value = (v)};     \
       arr_push((arr), item);                                                   \
       _ht_buckets_grow_if_needed(_arr_header(arr), ht_size(arr),               \
@@ -429,10 +430,11 @@ size_t bitset_cardinality(bitset *bs) {
 }
 
 // Dispose of bitset.
-void bitset_free(bitset *bs) {
-  free(bs);
-  bs = NULL;
-}
+#define bitset_free(bs)                                                        \
+  {                                                                            \
+    free(bs);                                                                  \
+    (bs) = NULL;                                                               \
+  }
 
 typedef enum { SET, CLEAR, FLIP } bs_range_op;
 
