@@ -1,5 +1,6 @@
 #include "../thirdparty/acutest.h"
 
+#include "arena.h"
 #include "data_structures.h"
 #include "day05.h"
 #include "day06.h"
@@ -213,6 +214,29 @@ void test_bitset_ranges(void) {
   bitset_free(bs);
 }
 
+void test_arena(void) {
+  Arena arena = arena_create(8);
+  TEST_CHECK(arena.capacity == 8);
+  TEST_CHECK(arena.offset == 0);
+  uint32_t *n = arena_alloc(&arena, sizeof(uint32_t), sizeof(uint32_t));
+  *n = 42;
+  TEST_CHECK(arena.capacity == 8);
+  TEST_CHECK(arena.offset == 4);
+  char *foo = arena_strdup(&arena, "meow");
+  TEST_CHECK(strcmp(foo, "meow") == 0);
+  TEST_CHECK(arena.capacity == 16);
+  TEST_CHECK(arena.offset == 9);
+  uint64_t *n2 = arena_alloc(&arena, sizeof(uint64_t), sizeof(uint64_t));
+  *n2 = 12345678;
+  TEST_CHECK(arena.capacity == 32);
+  TEST_CHECK(arena.offset == 24);
+  arena_reset(&arena);
+  TEST_CHECK(arena.capacity == 32);
+  TEST_CHECK(arena.offset == 0);
+  arena_free(&arena);
+  TEST_CHECK(arena.data == NULL);
+}
+
 void test_day05(void) {
   TEST_CHECK(is_nice("ugknbfddgicrmopn"));
   TEST_CHECK(is_nice("aaa"));
@@ -265,6 +289,8 @@ TEST_LIST = {
     {"test string hashtable growth", test_string_hashtable_growth},
     {"test bitset", test_bitset},
     {"test bitset ranges", test_bitset_ranges},
+
+    {"test arena", test_arena},
 
     {"test day 5", test_day05},
     {"test day 6", test_day06},

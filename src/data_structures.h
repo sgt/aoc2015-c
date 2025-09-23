@@ -4,7 +4,7 @@ Toy data structures that I implemented just for the fun of it.
 For real purposes, use Sean Barret's stb_ds.h (which this toy code is inspired
 by).
 
-For usage examples, see test.c
+For examples of usage, see test.c
 */
 
 #pragma once
