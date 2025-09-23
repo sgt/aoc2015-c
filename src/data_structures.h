@@ -19,16 +19,18 @@ For usage examples, see test.c
 #include <stdlib.h>
 #include <string.h>
 
-#define DS_INITIAL_CAPACITY 1024 // must be power of 2
-#define DS_GROW_FACTOR 2         // also must be power of 2
+#define DS_INITIAL_CAPACITY 16 // must be power of 2
+#define DS_GROW_FACTOR 2       // also must be power of 2
 
 // ==== Dynamic Array (append only) ====
+
+typedef struct _HTBucketsHeader _HTBucketsHeader;
 
 // The header precedes the array pointer returned to the user, stb_ds.h style.
 typedef struct {
   size_t len;
   size_t cap;
-  void *hashtable;
+  _HTBucketsHeader *hashtable;
 } _ArrHeader;
 
 #define _arr_header(arr) ((_ArrHeader *)(arr) - 1)
@@ -53,19 +55,19 @@ void *_arr_grow_if_needed(void *arr, size_t elem_size) {
 
 // Dispose of the array.
 #define arr_free(arr)                                                          \
-  {                                                                            \
+  do {                                                                         \
     if (arr) {                                                                 \
       free(_arr_header(arr));                                                  \
     }                                                                          \
     (arr) = NULL;                                                              \
-  }
+  } while (0)
 
 // Push value to the end of the array, growing its capacity if needed.
 #define arr_push(arr, val)                                                     \
-  {                                                                            \
+  do {                                                                         \
     (arr) = _arr_grow_if_needed(arr, sizeof(*(arr)));                          \
     (arr)[_arr_header(arr)->len++] = (val);                                    \
-  }
+  } while (0)
 
 // Return the last value of the array, evicting it from the array.
 #define arr_pop(arr) (arr)[--(_arr_header(arr)->len)]
@@ -80,9 +82,9 @@ void *_arr_grow_if_needed(void *arr, size_t elem_size) {
 
 // The hashtable header, followed by a cap-length bucket array (both allocated
 // at once).
-typedef struct {
+struct _HTBucketsHeader {
   size_t cap;
-} _HTBucketsHeader;
+};
 
 typedef struct {
   uint64_t hash;
@@ -169,13 +171,13 @@ void _ht_buckets_grow_if_needed(_ArrHeader *arr_hdr, size_t size,
     arr_hdr->hashtable = _ht_new(DS_INITIAL_CAPACITY);
   }
 
-  if (((_HTBucketsHeader *)arr_hdr->hashtable)->cap < size * grow_factor) {
+  if (size * 4 > arr_hdr->hashtable->cap * 3) {
     // grow hashtable and redistribute items (silly not-in-place algorithm TBC?)
     arr_hdr->hashtable = _ht_buckets_grow(arr_hdr->hashtable, grow_factor);
   }
 }
 
-#define _ht_header(arr) ((_HTBucketsHeader *)(_arr_header(arr)->hashtable))
+#define _ht_header(arr) (_arr_header(arr)->hashtable)
 
 #define _key_hash(k) hash(&(k), sizeof(k))
 
@@ -198,7 +200,7 @@ void _ht_buckets_grow_if_needed(_ArrHeader *arr_hdr, size_t size,
 
 // Put or update a value corresponding to the given key.
 #define ht_put(arr, k, v)                                                      \
-  {                                                                            \
+  do {                                                                         \
     bool new_key;                                                              \
     uint64_t h = _key_hash(k);                                                 \
     if (arr) {                                                                 \
@@ -219,11 +221,11 @@ void _ht_buckets_grow_if_needed(_ArrHeader *arr_hdr, size_t size,
                                  DS_GROW_FACTOR);                              \
       _ht_put_in_bucket(_arr_header(arr)->hashtable, h, ht_size(arr) - 1);     \
     }                                                                          \
-  }
+  } while (0)
 
 // Dispose of the hashtable.
 #define ht_free(arr)                                                           \
-  {                                                                            \
+  do {                                                                         \
     if (arr) {                                                                 \
       _HTBucketsHeader *b_hdr = (_arr_header(arr))->hashtable;                 \
       if (b_hdr) {                                                             \
@@ -233,7 +235,7 @@ void _ht_buckets_grow_if_needed(_ArrHeader *arr_hdr, size_t size,
                                                                                \
       arr_free(arr);                                                           \
     }                                                                          \
-  }
+  } while (0)
 
 // ==== String Hashtable ====
 // (hash table with C-style string as key )
@@ -262,7 +264,7 @@ uint64_t hash_string(const char *data) {
 #define sht_size ht_size
 
 #define sht_put(arr, k, v)                                                     \
-  {                                                                            \
+  do {                                                                         \
     bool new_key;                                                              \
     uint64_t h = hash_string(k);                                               \
     if (arr) {                                                                 \
@@ -288,10 +290,10 @@ uint64_t hash_string(const char *data) {
                                  DS_GROW_FACTOR);                              \
       _ht_put_in_bucket(_arr_header(arr)->hashtable, h, ht_size(arr) - 1);     \
     }                                                                          \
-  }
+  } while (0)
 
 #define sht_free(arr)                                                          \
-  {                                                                            \
+  do {                                                                         \
     if (arr) {                                                                 \
       for (auto i = 0; i < sht_size(arr); ++i) {                               \
         free(arr[i].key);                                                      \
@@ -303,7 +305,7 @@ uint64_t hash_string(const char *data) {
       }                                                                        \
       arr_free(arr);                                                           \
     }                                                                          \
-  }
+  } while (0)
 
 // ==== Bitset ====
 
@@ -431,10 +433,10 @@ size_t bitset_cardinality(bitset *bs) {
 
 // Dispose of bitset.
 #define bitset_free(bs)                                                        \
-  {                                                                            \
+  do {                                                                         \
     free(bs);                                                                  \
     (bs) = NULL;                                                               \
-  }
+  } while (0)
 
 typedef enum { SET, CLEAR, FLIP } bs_range_op;
 
