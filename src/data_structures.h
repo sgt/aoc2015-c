@@ -532,3 +532,4 @@ void _bitset_range_do(const bs_range_op op, bitset **bs, const size_t bit_idx,
 
 #define bitset_range_flip(bs, bit_idx, length)                                 \
   _bitset_range_do(FLIP, &(bs), (bit_idx), (length))
+

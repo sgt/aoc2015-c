@@ -1,5 +1,6 @@
 #pragma once
 
+#include "arena.h"
 #include "common.h"
 #include "data_structures.h"
 #include <ctype.h>
@@ -7,27 +8,51 @@
 #include <stdint.h>
 
 typedef struct {
-  enum { D7_VAR, D7_NUM } tag;
+  enum { D7_LITERAL, D7_INTEGER } tag;
   union {
-    char *var;
-    uint16_t num;
+    char *literal;
+    uint16_t integer;
   } val;
 } d7_value;
 
-static inline d7_value d7_value_var(char *s) {
-  return (d7_value){.tag = D7_VAR, .val = {.var = s}};
+static inline d7_value d7_value_literal(Arena *arena, const char *s) {
+  char *s_copy = arena_strdup(arena, s);
+  assert(s_copy != NULL);
+  return (d7_value){.tag = D7_LITERAL, .val = {.literal = s_copy}};
 }
-static inline d7_value d7_value_num(uint16_t n) {
-  return (d7_value){.tag = D7_NUM, .val = {.num = n}};
+
+static inline d7_value d7_value_int(uint16_t n) {
+  return (d7_value){.tag = D7_INTEGER, .val = {.integer = n}};
+}
+
+static inline d7_value d7_value_parse(Arena *arena, const char *s) {
+  return isdigit(s[0]) ? d7_value_int(atoi(s)) : d7_value_literal(arena, s);
 }
 
 typedef struct {
-  enum { D7_ASSIGN, D7_AND, D7_OR, D7_LSHIFT, D7_RSHIFT, D7_NOT } tag;
+  enum { D7_ID, D7_AND, D7_OR, D7_LSHIFT, D7_RSHIFT, D7_NOT } tag;
   d7_value v1, v2;
 } d7_op;
 
-static inline d7_op_assign() {
-  return (d7_op){.tag = D7_ASSIGN, .v1 = v}
+#define D7_DEFINE_OP_FUNC(Name, Tag)                                           \
+  static inline d7_op d7_op_##Name(Arena *arena, const char *s1,               \
+                                   const char *s2) {                           \
+    return (d7_op){.tag = Tag,                                                 \
+                   .v1 = d7_value_parse(arena, s1),                            \
+                   .v2 = d7_value_parse(arena, s2)};                           \
+  }
+
+static inline d7_op d7_op_id(Arena *arena, const char *s1) {
+  return (d7_op){.tag = D7_ID, .v1 = d7_value_parse(arena, s1)};
+}
+
+D7_DEFINE_OP_FUNC(and, D7_AND);
+D7_DEFINE_OP_FUNC(or, D7_OR);
+D7_DEFINE_OP_FUNC(lshift, D7_LSHIFT);
+D7_DEFINE_OP_FUNC(rshift, D7_RSHIFT);
+
+static inline d7_op d7_op_not(Arena *arena, const char *s1) {
+  return (d7_op){.tag = D7_NOT, .v1 = d7_value_parse(arena, s1)};
 }
 
 typedef struct {
@@ -35,44 +60,30 @@ typedef struct {
   d7_op value;
 } day07_elem;
 
-static inline d7_value d7_parse_value(day07_elem *m, char *s) {
-  return isdigit(s[0]) ? d7_value_num(atoi(s)) : d7_value_var(s);
-}
-
-void day07_process_line(day07_elem **m, char *line) {
+void day07_process_line(Arena *arena, day07_elem **m, char *line) {
   char s1[8], s2[8], s3[8];
   if (sscanf(line, "%s -> %s", s1, s2) == 2) {
-    auto v = d7_parse_value(*m, s1);
-    sht_put(*m, s2, v);
+    sht_put(*m, s2, d7_op_id(arena, s1));
     return;
   }
   if (sscanf(line, "NOT %s -> %s", s1, s2) == 2) {
-    auto v = d7_parse_value(*m, s1);
-    sht_put(*m, s2, ~v);
+    sht_put(*m, s2, d7_op_not(arena, s1));
     return;
   }
   if (sscanf(line, "%s AND %s -> %s", s1, s2, s3) == 3) {
-    auto v = d7_parse_value(*m, s1);
-    auto v2 = d7_parse_value(*m, s2);
-    sht_put(*m, s3, v & v2);
+    sht_put(*m, s3, d7_op_and(arena, s1, s2));
     return;
   }
   if (sscanf(line, "%s OR %s -> %s", s1, s2, s3) == 3) {
-    auto v = d7_parse_value(*m, s1);
-    auto v2 = d7_parse_value(*m, s2);
-    sht_put(*m, s3, v | v2);
+    sht_put(*m, s3, d7_op_or(arena, s1, s2));
     return;
   }
   if (sscanf(line, "%s LSHIFT %s -> %s", s1, s2, s3) == 3) {
-    auto v = d7_parse_value(*m, s1);
-    auto v2 = d7_parse_value(*m, s2);
-    sht_put(*m, s3, v << v2);
+    sht_put(*m, s3, d7_op_lshift(arena, s1, s2));
     return;
   }
   if (sscanf(line, "%s RSHIFT %s -> %s", s1, s2, s3) == 3) {
-    auto v = d7_parse_value(*m, s1);
-    auto v2 = d7_parse_value(*m, s2);
-    sht_put(*m, s3, v >> v2);
+    sht_put(*m, s3, d7_op_rshift(arena, s1, s2));
     return;
   }
 
@@ -80,7 +91,10 @@ void day07_process_line(day07_elem **m, char *line) {
   exit(1);
 }
 
+uint32_t d7_eval(day07_elem *m, const char *var_name) { return -1; }
+
 uint32_t day7(const solution_part part) {
+  Arena arena = arena_create(256);
   FILE *f = fopen("data/input07.txt", "r");
   if (f == NULL) {
     perror("error opening input file");
@@ -90,10 +104,10 @@ uint32_t day7(const solution_part part) {
   day07_elem *m = NULL;
   char line[128];
   while (fgets(line, 100, f) != NULL) {
-    day07_process_line(&m, line);
+    day07_process_line(&arena, &m, line);
   }
 
-  auto result = sht_get_or(m, "a", -1);
+  auto result = d7_eval(m, "a");
   sht_free(m);
   return result;
 }
