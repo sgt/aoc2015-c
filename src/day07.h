@@ -60,7 +60,7 @@ typedef struct {
   d7_op value;
 } day07_elem;
 
-void day07_process_line(Arena *arena, day07_elem **m, char *line) {
+void day07_process_line(Arena *arena, day07_elem **m, const char *line) {
   char s1[8], s2[8], s3[8];
   if (sscanf(line, "%s -> %s", s1, s2) == 2) {
     sht_put(*m, s2, d7_op_id(arena, s1));
@@ -91,9 +91,42 @@ void day07_process_line(Arena *arena, day07_elem **m, char *line) {
   exit(1);
 }
 
-uint32_t d7_eval(day07_elem *m, const char *var_name) { return -1; }
+uint16_t d7_eval_var(day07_elem *m, const char *var_name);
 
-uint32_t day7(const solution_part part) {
+uint16_t d7_eval_value(day07_elem *m, d7_value val) {
+  switch (val.tag) {
+  case D7_INTEGER:
+    return val.val.integer;
+  case D7_LITERAL:
+    return d7_eval_var(m, val.val.literal);
+  }
+}
+
+uint16_t d7_eval_op(day07_elem *m, d7_op op) {
+  switch (op.tag) {
+  case D7_ID:
+    return d7_eval_value(m, op.v1);
+  case D7_AND:
+    return d7_eval_value(m, op.v1) & d7_eval_value(m, op.v2);
+  case D7_OR:
+    return d7_eval_value(m, op.v1) | d7_eval_value(m, op.v2);
+  case D7_LSHIFT:
+    return d7_eval_value(m, op.v1) << d7_eval_value(m, op.v2);
+  case D7_RSHIFT:
+    return d7_eval_value(m, op.v1) >> d7_eval_value(m, op.v2);
+  case D7_NOT:
+    return ~(d7_eval_value(m, op.v1));
+  }
+}
+
+uint16_t d7_eval_var(day07_elem *m, const char *var_name) {
+  printf("evaluating var '%s'\n", var_name);
+  size_t op_idx = sht_get_idx(m, var_name);
+  assert(op_idx >= 0);
+  return d7_eval_op(m, m[op_idx].value);
+}
+
+uint16_t day7(const solution_part part) {
   Arena arena = arena_create(256);
   FILE *f = fopen("data/input07.txt", "r");
   if (f == NULL) {
@@ -107,10 +140,11 @@ uint32_t day7(const solution_part part) {
     day07_process_line(&arena, &m, line);
   }
 
-  auto result = d7_eval(m, "a");
+  auto result = d7_eval_var(m, "a");
+  arena_free(&arena);
   sht_free(m);
   return result;
 }
 
-uint32_t day7_part1() { return day7(PART1); }
-uint32_t day7_part2() { return day7(PART2); }
+uint16_t day7_part1() { return day7(PART1); }
+uint16_t day7_part2() { return day7(PART2); }
