@@ -187,6 +187,8 @@ uint16_t day7(const solution_part part) {
     day07_process_line(&m, line);
   }
 
+  fclose(f);
+
   uint16_t result_a = d7_eval_var(&m, "a");
   if (part == PART2) {
     d7_op b_val = (d7_op){.tag = D7_ID, .v1 = d7_value_int(result_a)};
