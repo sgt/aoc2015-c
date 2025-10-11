@@ -5,6 +5,7 @@
 #include "data_structures.h"
 #include <ctype.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 typedef struct {
@@ -135,17 +136,17 @@ uint16_t d7_eval_op(day07_elem *m, d7_op op) {
   }
 }
 
-struct {
+static struct {
   char *key;
   uint16_t value;
 } *d7_var_memo_g = NULL;
 
 uint16_t d7_eval_var(day07_elem *m, const char *var_name) {
-  size_t memo_idx = sht_get_idx(d7_var_memo_g, var_name);
+  ptrdiff_t memo_idx = sht_get_idx(d7_var_memo_g, var_name);
   if (memo_idx >= 0) {
     return d7_var_memo_g[memo_idx].value;
   }
-  size_t op_idx = sht_get_idx(m, var_name);
+  ptrdiff_t op_idx = sht_get_idx(m, var_name);
   assert(op_idx >= 0);
   uint16_t result = d7_eval_op(m, m[op_idx].value);
   sht_put(d7_var_memo_g, var_name, result);
@@ -165,8 +166,6 @@ uint16_t day7(const solution_part part) {
   while (fgets(line, 100, f) != NULL) {
     day07_process_line(&arena, &m, line);
   }
-
-  printf("%lld\n", sht_size(m));
 
   auto result = d7_eval_var(m, "a");
   arena_free(&arena);

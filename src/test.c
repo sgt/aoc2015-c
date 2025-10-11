@@ -228,7 +228,6 @@ void test_arena(void) {
   TEST_CHECK(foo != NULL);
   TEST_CHECK(strcmp(foo, "meow") == 0);
   TEST_CHECK(arena.offset == 32);
-  TEST_MSG("%lld", arena.offset);
   uint64_t *n2 = arena_alloc(&arena, sizeof(uint64_t));
   TEST_CHECK(n2 == NULL);
   TEST_CHECK(arena.offset == 32);
