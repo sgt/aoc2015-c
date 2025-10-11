@@ -262,26 +262,24 @@ void test_day06(void) {
 }
 
 void test_day07(void) {
-  Arena arena = arena_create(256);
-  day07_elem *m = NULL;
-  day07_process_line(&arena, &m, "123 -> x");
-  day07_process_line(&arena, &m, "456 -> y");
-  day07_process_line(&arena, &m, "x AND y -> d");
-  day07_process_line(&arena, &m, "x OR y -> e");
-  day07_process_line(&arena, &m, "x LSHIFT 2 -> f");
-  day07_process_line(&arena, &m, "y RSHIFT 2 -> g");
-  day07_process_line(&arena, &m, "NOT x -> h");
-  day07_process_line(&arena, &m, "NOT y -> i");
-  TEST_CHECK(d7_eval_var(m, "d") == 72);
-  TEST_CHECK(d7_eval_var(m, "e") == 507);
-  TEST_CHECK(d7_eval_var(m, "f") == 492);
-  TEST_CHECK(d7_eval_var(m, "g") == 114);
-  TEST_CHECK(d7_eval_var(m, "h") == 65412);
-  TEST_CHECK(d7_eval_var(m, "i") == 65079);
-  TEST_CHECK(d7_eval_var(m, "x") == 123);
-  TEST_CHECK(d7_eval_var(m, "y") == 456);
-  sht_free(m);
-  arena_free(&arena);
+  d7_machine m = d7_machine_create(256);
+  day07_process_line( &m, "123 -> x");
+  day07_process_line( &m, "456 -> y");
+  day07_process_line( &m, "x AND y -> d");
+  day07_process_line( &m, "x OR y -> e");
+  day07_process_line( &m, "x LSHIFT 2 -> f");
+  day07_process_line( &m, "y RSHIFT 2 -> g");
+  day07_process_line( &m, "NOT x -> h");
+  day07_process_line( &m, "NOT y -> i");
+  TEST_CHECK(d7_eval_var(&m, "d") == 72);
+  TEST_CHECK(d7_eval_var(&m, "e") == 507);
+  TEST_CHECK(d7_eval_var(&m, "f") == 492);
+  TEST_CHECK(d7_eval_var(&m, "g") == 114);
+  TEST_CHECK(d7_eval_var(&m, "h") == 65412);
+  TEST_CHECK(d7_eval_var(&m, "i") == 65079);
+  TEST_CHECK(d7_eval_var(&m, "x") == 123);
+  TEST_CHECK(d7_eval_var(&m, "y") == 456);
+  d7_machine_free(&m);
 }
 
 TEST_LIST = {

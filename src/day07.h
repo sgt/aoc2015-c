@@ -16,6 +16,42 @@ typedef struct {
   } val;
 } d7_value;
 
+typedef struct {
+  enum { D7_ID, D7_AND, D7_OR, D7_LSHIFT, D7_RSHIFT, D7_NOT } tag;
+  d7_value v1, v2;
+} d7_op;
+
+typedef struct {
+  char *key;
+  d7_op value;
+} d7_signal;
+
+typedef struct {
+  Arena arena; // for storing strings
+  struct {
+    char *key;
+    d7_op value;
+  } *signals; // for storing signal definitions
+  struct {
+    char *key;
+    uint16_t value;
+  } *var_cache; // for caching computed values
+} d7_machine;
+
+d7_machine d7_machine_create(size_t arena_size) {
+  return (d7_machine){
+      .arena = arena_create(arena_size),
+      .signals = NULL,
+      .var_cache = NULL,
+  };
+}
+
+void d7_machine_free(d7_machine *m) {
+  sht_free(m->signals);
+  sht_free(m->var_cache);
+  arena_free(&m->arena);
+}
+
 bool _isalnumstr(const char *s) {
   assert(s != NULL);
   for (size_t i = 0; s[i] != '\0'; ++i) {
@@ -26,8 +62,8 @@ bool _isalnumstr(const char *s) {
   return true;
 }
 
-static inline d7_value d7_value_literal(Arena *arena, const char *s) {
-  char *s_copy = arena_strdup(arena, s);
+static inline d7_value d7_value_literal(d7_machine *m, const char *s) {
+  char *s_copy = arena_strdup(&m->arena, s);
   assert(s_copy != NULL);
   return (d7_value){.tag = D7_LITERAL, .val = {.literal = s_copy}};
 }
@@ -36,25 +72,19 @@ static inline d7_value d7_value_int(uint16_t n) {
   return (d7_value){.tag = D7_INTEGER, .val = {.integer = n}};
 }
 
-static inline d7_value d7_value_parse(Arena *arena, const char *s) {
-  return isdigit(s[0]) ? d7_value_int(atoi(s)) : d7_value_literal(arena, s);
+static inline d7_value d7_value_parse(d7_machine *m, const char *s) {
+  return isdigit(s[0]) ? d7_value_int(atoi(s)) : d7_value_literal(m, s);
 }
 
-typedef struct {
-  enum { D7_ID, D7_AND, D7_OR, D7_LSHIFT, D7_RSHIFT, D7_NOT } tag;
-  d7_value v1, v2;
-} d7_op;
-
 #define D7_DEFINE_OP_FUNC(Name, Tag)                                           \
-  static inline d7_op d7_op_##Name(Arena *arena, const char *s1,               \
+  static inline d7_op d7_op_##Name(d7_machine *m, const char *s1,              \
                                    const char *s2) {                           \
-    return (d7_op){.tag = Tag,                                                 \
-                   .v1 = d7_value_parse(arena, s1),                            \
-                   .v2 = d7_value_parse(arena, s2)};                           \
+    return (d7_op){                                                            \
+        .tag = Tag, .v1 = d7_value_parse(m, s1), .v2 = d7_value_parse(m, s2)}; \
   }
 
-static inline d7_op d7_op_id(Arena *arena, const char *s1) {
-  return (d7_op){.tag = D7_ID, .v1 = d7_value_parse(arena, s1)};
+static inline d7_op d7_op_id(d7_machine *m, const char *s1) {
+  return (d7_op){.tag = D7_ID, .v1 = d7_value_parse(m, s1)};
 }
 
 D7_DEFINE_OP_FUNC(and, D7_AND);
@@ -62,39 +92,34 @@ D7_DEFINE_OP_FUNC(or, D7_OR);
 D7_DEFINE_OP_FUNC(lshift, D7_LSHIFT);
 D7_DEFINE_OP_FUNC(rshift, D7_RSHIFT);
 
-static inline d7_op d7_op_not(Arena *arena, const char *s1) {
-  return (d7_op){.tag = D7_NOT, .v1 = d7_value_parse(arena, s1)};
+static inline d7_op d7_op_not(d7_machine *m, const char *s1) {
+  return (d7_op){.tag = D7_NOT, .v1 = d7_value_parse(m, s1)};
 }
 
-typedef struct {
-  char *key;
-  d7_op value;
-} day07_elem;
-
-void day07_process_line(Arena *arena, day07_elem **m, const char *line) {
+void day07_process_line(d7_machine *m, const char *line) {
   char s1[8], s2[8], s3[8];
   if (sscanf(line, "%s -> %s", s1, s2) == 2) {
-    sht_put(*m, s2, d7_op_id(arena, s1));
+    sht_put(m->signals, s2, d7_op_id(m, s1));
     return;
   }
   if (sscanf(line, "NOT %s -> %s", s1, s2) == 2) {
-    sht_put(*m, s2, d7_op_not(arena, s1));
+    sht_put(m->signals, s2, d7_op_not(m, s1));
     return;
   }
   if (sscanf(line, "%s AND %s -> %s", s1, s2, s3) == 3) {
-    sht_put(*m, s3, d7_op_and(arena, s1, s2));
+    sht_put(m->signals, s3, d7_op_and(m, s1, s2));
     return;
   }
   if (sscanf(line, "%s OR %s -> %s", s1, s2, s3) == 3) {
-    sht_put(*m, s3, d7_op_or(arena, s1, s2));
+    sht_put(m->signals, s3, d7_op_or(m, s1, s2));
     return;
   }
   if (sscanf(line, "%s LSHIFT %s -> %s", s1, s2, s3) == 3) {
-    sht_put(*m, s3, d7_op_lshift(arena, s1, s2));
+    sht_put(m->signals, s3, d7_op_lshift(m, s1, s2));
     return;
   }
   if (sscanf(line, "%s RSHIFT %s -> %s", s1, s2, s3) == 3) {
-    sht_put(*m, s3, d7_op_rshift(arena, s1, s2));
+    sht_put(m->signals, s3, d7_op_rshift(m, s1, s2));
     return;
   }
 
@@ -102,9 +127,9 @@ void day07_process_line(Arena *arena, day07_elem **m, const char *line) {
   exit(1);
 }
 
-uint16_t d7_eval_var(day07_elem *m, const char *var_name);
+uint16_t d7_eval_var(d7_machine *m, const char *var_name);
 
-uint16_t d7_eval_value(day07_elem *m, d7_value val) {
+uint16_t d7_eval_value(d7_machine *m, d7_value val) {
   switch (val.tag) {
   case D7_INTEGER:
     return val.val.integer;
@@ -116,7 +141,7 @@ uint16_t d7_eval_value(day07_elem *m, d7_value val) {
   }
 }
 
-uint16_t d7_eval_op(day07_elem *m, d7_op op) {
+uint16_t d7_eval_op(d7_machine *m, d7_op op) {
   switch (op.tag) {
   case D7_ID:
     return d7_eval_value(m, op.v1);
@@ -136,47 +161,41 @@ uint16_t d7_eval_op(day07_elem *m, d7_op op) {
   }
 }
 
-static struct {
-  char *key;
-  uint16_t value;
-} *d7_var_memo_g = NULL;
-
-uint16_t d7_eval_var(day07_elem *m, const char *var_name) {
-  ptrdiff_t memo_idx = sht_get_idx(d7_var_memo_g, var_name);
+uint16_t d7_eval_var(d7_machine *m, const char *var_name) {
+  ptrdiff_t memo_idx = sht_get_idx(m->var_cache, var_name);
   if (memo_idx >= 0) {
-    return d7_var_memo_g[memo_idx].value;
+    return m->var_cache[memo_idx].value;
   }
-  ptrdiff_t op_idx = sht_get_idx(m, var_name);
+  ptrdiff_t op_idx = sht_get_idx(m->signals, var_name);
   assert(op_idx >= 0);
-  uint16_t result = d7_eval_op(m, m[op_idx].value);
-  sht_put(d7_var_memo_g, var_name, result);
+  uint16_t result = d7_eval_op(m, m->signals[op_idx].value);
+  sht_put(m->var_cache, var_name, result);
   return result;
 }
 
 uint16_t day7(const solution_part part) {
-  Arena arena = arena_create(16 * 1024);
   FILE *f = fopen("data/input07.txt", "r");
   if (f == NULL) {
     perror("error opening input file");
     return -1;
   }
 
-  day07_elem *m = NULL;
+  d7_machine m = d7_machine_create(16 * 1024);
+
   char line[128];
   while (fgets(line, 100, f) != NULL) {
-    day07_process_line(&arena, &m, line);
+    day07_process_line(&m, line);
   }
 
-  uint16_t result_a = d7_eval_var(m, "a");
+  uint16_t result_a = d7_eval_var(&m, "a");
   if (part == PART2) {
     d7_op b_val = (d7_op){.tag = D7_ID, .v1 = d7_value_int(result_a)};
-    sht_put(m, "b", b_val);
-    sht_free(d7_var_memo_g);
-    result_a = d7_eval_var(m, "a");
+    sht_put(m.signals, "b", b_val);
+    sht_free(m.var_cache);
+    result_a = d7_eval_var(&m, "a");
   }
 
-  arena_free(&arena);
-  sht_free(m);
+  d7_machine_free(&m);
   return result_a;
 }
 
