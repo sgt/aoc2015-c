@@ -167,10 +167,17 @@ uint16_t day7(const solution_part part) {
     day07_process_line(&arena, &m, line);
   }
 
-  auto result = d7_eval_var(m, "a");
+  uint16_t result_a = d7_eval_var(m, "a");
+  if (part == PART2) {
+    d7_op b_val = (d7_op){.tag = D7_ID, .v1 = d7_value_int(result_a)};
+    sht_put(m, "b", b_val);
+    sht_free(d7_var_memo_g);
+    result_a = d7_eval_var(m, "a");
+  }
+
   arena_free(&arena);
   sht_free(m);
-  return result;
+  return result_a;
 }
 
 uint16_t day7_part1() { return day7(PART1); }
