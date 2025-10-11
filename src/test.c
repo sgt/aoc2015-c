@@ -125,9 +125,12 @@ void test_string_hashtable_growth(void) {
     sht_put(m, key, val);
   }
   TEST_CHECK(sht_size(m) == 200);
-  TEST_CHECK(sht_has(m, "meow20"));
   TEST_CHECK(!sht_has(m, "meow300"));
-  TEST_CHECK(sht_get(m, "meow42") == 42);
+  for (int i = 1; i <= 200; ++i) {
+    char key[16];
+    sprintf(key, "meow%d", i);
+    TEST_CHECK(sht_get(m, key) == i);
+  }
   sht_free(m);
   TEST_CHECK(m == NULL);
 }
@@ -215,23 +218,22 @@ void test_bitset_ranges(void) {
 }
 
 void test_arena(void) {
-  Arena arena = arena_create(8);
-  TEST_CHECK(arena.capacity == 8);
+  Arena arena = arena_create(32);
   TEST_CHECK(arena.offset == 0);
-  uint32_t *n = arena_alloc(&arena, sizeof(uint32_t), sizeof(uint32_t));
+  uint32_t *n = arena_alloc(&arena, sizeof(uint32_t));
+  TEST_CHECK(n != NULL);
   *n = 42;
-  TEST_CHECK(arena.capacity == 8);
-  TEST_CHECK(arena.offset == 4);
+  TEST_CHECK(arena.offset == 16);
   char *foo = arena_strdup(&arena, "meow");
+  TEST_CHECK(foo != NULL);
   TEST_CHECK(strcmp(foo, "meow") == 0);
-  TEST_CHECK(arena.capacity == 16);
-  TEST_CHECK(arena.offset == 9);
-  uint64_t *n2 = arena_alloc(&arena, sizeof(uint64_t), sizeof(uint64_t));
-  *n2 = 12345678;
-  TEST_CHECK(arena.capacity == 32);
-  TEST_CHECK(arena.offset == 24);
+  TEST_CHECK(arena.offset == 32);
+  TEST_MSG("%lld", arena.offset);
+  uint64_t *n2 = arena_alloc(&arena, sizeof(uint64_t));
+  TEST_CHECK(n2 == NULL);
+  TEST_CHECK(arena.offset == 32);
   arena_reset(&arena);
-  TEST_CHECK(arena.capacity == 32);
+  TEST_CHECK(arena.size == 32);
   TEST_CHECK(arena.offset == 0);
   arena_free(&arena);
   TEST_CHECK(arena.data == NULL);

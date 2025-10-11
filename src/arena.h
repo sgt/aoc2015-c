@@ -7,50 +7,52 @@ For examples of usage, see test.c
 #pragma once
 
 #include <assert.h>
+#include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#define ARENA_DEFAULT_ALIGNMENT 16
+
 typedef struct {
-  size_t capacity;
+  size_t size;
   size_t offset;
   void *data;
 } Arena;
 
-Arena arena_create(const size_t initial_capacity) {
-  void *data = malloc(initial_capacity);
+Arena arena_create(const size_t size) {
+  void *data = malloc(size);
   assert(data);
-  return (Arena){.capacity = initial_capacity, .offset = 0, .data = data};
+  return (Arena){.size = size, .offset = 0, .data = data};
 }
 
 static inline bool _is_power_of_two(size_t x) { return (x & (x - 1)) == 0; }
 
-size_t _align_up(size_t offset, size_t alignment) {
-  assert(_is_power_of_two(alignment));
+size_t _align_up(size_t offset) {
+  assert(_is_power_of_two(ARENA_DEFAULT_ALIGNMENT));
+  const size_t alignment = ARENA_DEFAULT_ALIGNMENT;
   size_t mod = offset & (alignment - 1);
   return mod == 0 ? offset : offset - mod + alignment;
 }
 
 // Allocate a chunk of memory of specified in the arena.
-void *arena_alloc(Arena *arena, const size_t size, size_t alignment) {
-  arena->offset = _align_up(arena->offset, alignment);
-  if (arena->capacity - arena->offset < size) {
-    arena->capacity *= 2;
-    arena->data = realloc(arena->data, arena->capacity);
-    assert(arena->data);
+void *arena_alloc(Arena *arena, const size_t size) {
+  if (arena->offset + size > arena->size) {
+    return NULL;
   }
   void *ptr = &arena->data[arena->offset];
-  arena->offset += size;
+  arena->offset += _align_up(size);
   return ptr;
 }
 
 // Duplicate the string, allocating it on the arena.
 char *arena_strdup(Arena *arena, const char *s) {
   size_t len = strlen(s);
-  char *new_s = arena_alloc(arena, len + 1, 1);
-  for (auto i = 0; i < len; ++i) {
-    new_s[i] = s[i];
+  char *new_s = arena_alloc(arena, len + 1);
+  if (new_s == NULL) {
+    return NULL;
   }
-  new_s[len] = '\0';
+  memcpy(new_s, s, len + 1);
   return new_s;
 }
 

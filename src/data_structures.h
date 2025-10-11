@@ -50,6 +50,8 @@ void *_arr_grow_if_needed(void *arr, size_t elem_size) {
   return (void *)(hdr + 1);
 }
 
+#define arr_cap(arr) ((arr) ? _arr_header(arr)->cap : -1)
+
 // Number of elements in the array.
 #define arr_len(arr) ((arr) ? _arr_header(arr)->len : 0)
 
@@ -70,10 +72,12 @@ void *_arr_grow_if_needed(void *arr, size_t elem_size) {
   } while (0)
 
 // Return the last value of the array, evicting it from the array.
-#define arr_pop(arr) (arr)[--(_arr_header(arr)->len)]
+#define arr_pop(arr)                                                           \
+  (assert(arr_len(arr) > 0), (arr)[--(_arr_header(arr)->len)])
 
 // Return the last value of the array.
-#define arr_last(arr) (arr)[_arr_header(arr)->len - 1]
+#define arr_last(arr)                                                          \
+  (assert(arr_len(arr) > 0), (arr)[_arr_header(arr)->len - 1])
 
 // ==== Hash Table (append only) ====
 
@@ -122,6 +126,8 @@ static inline ptrdiff_t _ht_bucket_starting_idx(_HTBucketsHeader *hdr,
 }
 
 // Find index of bucket where the hash should be stored.
+// TODO doesn't check for hash collisions. needs special case for string key
+// equality to be used with sht_*
 ptrdiff_t _ht_find_bucket_idx(_HTBucketsHeader *hdr, uint64_t hash) {
   _HTBucket *buckets = (_HTBucket *)(hdr + 1);
   ptrdiff_t bucket_idx = _ht_bucket_starting_idx(hdr, hash);
@@ -265,25 +271,18 @@ uint64_t hash_string(const char *data) {
 
 #define sht_put(arr, k, v)                                                     \
   do {                                                                         \
-    bool new_key;                                                              \
+    bool new_key = true;                                                       \
     uint64_t h = hash_string(k);                                               \
     if (arr) {                                                                 \
       ptrdiff_t idx = _ht_get_idx_from_bucket(_ht_header(arr), h);             \
       if (idx >= 0) {                                                          \
         (arr)[idx].value = (v);                                                \
         new_key = false;                                                       \
-      } else {                                                                 \
-        new_key = true;                                                        \
       }                                                                        \
-    } else {                                                                   \
-      new_key = true;                                                          \
     }                                                                          \
     if (new_key) {                                                             \
       char *key_copy = strdup(k);                                              \
-      if (key_copy == NULL) {                                                  \
-        perror("memory allocation error");                                     \
-        exit(1);                                                               \
-      }                                                                        \
+      assert(key_copy != NULL);                                                \
       typeof(*arr) item = (typeof(*arr)){.key = (key_copy), .value = (v)};     \
       arr_push((arr), item);                                                   \
       _ht_buckets_grow_if_needed(_arr_header(arr), ht_size(arr),               \
@@ -532,4 +531,3 @@ void _bitset_range_do(const bs_range_op op, bitset **bs, const size_t bit_idx,
 
 #define bitset_range_flip(bs, bit_idx, length)                                 \
   _bitset_range_do(FLIP, &(bs), (bit_idx), (length))
-

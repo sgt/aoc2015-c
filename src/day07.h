@@ -15,6 +15,16 @@ typedef struct {
   } val;
 } d7_value;
 
+bool _isalnumstr(const char *s) {
+  assert(s != NULL);
+  for (size_t i = 0; s[i] != '\0'; ++i) {
+    if (!isalnum(s[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+
 static inline d7_value d7_value_literal(Arena *arena, const char *s) {
   char *s_copy = arena_strdup(arena, s);
   assert(s_copy != NULL);
@@ -99,6 +109,9 @@ uint16_t d7_eval_value(day07_elem *m, d7_value val) {
     return val.val.integer;
   case D7_LITERAL:
     return d7_eval_var(m, val.val.literal);
+  default:
+    perror("Unknown value type");
+    exit(1);
   }
 }
 
@@ -116,18 +129,31 @@ uint16_t d7_eval_op(day07_elem *m, d7_op op) {
     return d7_eval_value(m, op.v1) >> d7_eval_value(m, op.v2);
   case D7_NOT:
     return ~(d7_eval_value(m, op.v1));
+  default:
+    perror("Unknown op");
+    exit(1);
   }
 }
 
+struct {
+  char *key;
+  uint16_t value;
+} *d7_var_memo_g = NULL;
+
 uint16_t d7_eval_var(day07_elem *m, const char *var_name) {
-  printf("evaluating var '%s'\n", var_name);
+  size_t memo_idx = sht_get_idx(d7_var_memo_g, var_name);
+  if (memo_idx >= 0) {
+    return d7_var_memo_g[memo_idx].value;
+  }
   size_t op_idx = sht_get_idx(m, var_name);
   assert(op_idx >= 0);
-  return d7_eval_op(m, m[op_idx].value);
+  uint16_t result = d7_eval_op(m, m[op_idx].value);
+  sht_put(d7_var_memo_g, var_name, result);
+  return result;
 }
 
 uint16_t day7(const solution_part part) {
-  Arena arena = arena_create(256);
+  Arena arena = arena_create(16 * 1024);
   FILE *f = fopen("data/input07.txt", "r");
   if (f == NULL) {
     perror("error opening input file");
@@ -139,6 +165,8 @@ uint16_t day7(const solution_part part) {
   while (fgets(line, 100, f) != NULL) {
     day07_process_line(&arena, &m, line);
   }
+
+  printf("%lld\n", sht_size(m));
 
   auto result = d7_eval_var(m, "a");
   arena_free(&arena);
