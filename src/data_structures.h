@@ -250,7 +250,7 @@ void _ht_buckets_grow_if_needed(_ArrHeader *arr_hdr, size_t size,
 // FNV hash for strings
 uint64_t hash_string(const char *data) {
   uint64_t hash = 14695981039346656037ULL;
-  for (auto i = 0; data[i] != '\0'; ++i) {
+  for (size_t i = 0; data[i] != '\0'; ++i) {
     hash ^= data[i];
     hash *= 1099511628211ULL;
   }
@@ -294,7 +294,7 @@ uint64_t hash_string(const char *data) {
 #define sht_free(arr)                                                          \
   do {                                                                         \
     if (arr) {                                                                 \
-      for (auto i = 0; i < sht_size(arr); ++i) {                               \
+      for (size_t i = 0; i < sht_size(arr); ++i) {                               \
         free(arr[i].key);                                                      \
       }                                                                        \
       _HTBucketsHeader *b_hdr = (_arr_header(arr))->hashtable;                 \

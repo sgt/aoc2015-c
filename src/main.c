@@ -11,6 +11,7 @@
 #include "day05.h"
 #include "day06.h"
 #include "day07.h"
+#include "day08.h"
 
 int main(const int argc, const char *argv[]) {
   if (argc != 2) {
@@ -54,8 +55,12 @@ int main(const int argc, const char *argv[]) {
     printf("7.1: %d\n", day7_part1());
     printf("7.2: %d\n", day7_part2());
     break;
+  case 8:
+    printf("8.1: %d\n", day8_part1());
+    printf("8.2: %d\n", day8_part2());
+    break;
   default:
-    printf("there is no problem %d\n", n);
+    printf("there is no problem #%d\n", n);
   }
 
   return 0;

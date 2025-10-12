@@ -5,6 +5,7 @@
 #include "day05.h"
 #include "day06.h"
 #include "day07.h"
+#include "day08.h"
 #include <stdint.h>
 
 #define TEST_DYN_ARRAY(type)                                                   \
@@ -263,14 +264,14 @@ void test_day06(void) {
 
 void test_day07(void) {
   d7_machine m = d7_machine_create(256);
-  day07_process_line( &m, "123 -> x");
-  day07_process_line( &m, "456 -> y");
-  day07_process_line( &m, "x AND y -> d");
-  day07_process_line( &m, "x OR y -> e");
-  day07_process_line( &m, "x LSHIFT 2 -> f");
-  day07_process_line( &m, "y RSHIFT 2 -> g");
-  day07_process_line( &m, "NOT x -> h");
-  day07_process_line( &m, "NOT y -> i");
+  day07_process_line(&m, "123 -> x");
+  day07_process_line(&m, "456 -> y");
+  day07_process_line(&m, "x AND y -> d");
+  day07_process_line(&m, "x OR y -> e");
+  day07_process_line(&m, "x LSHIFT 2 -> f");
+  day07_process_line(&m, "y RSHIFT 2 -> g");
+  day07_process_line(&m, "NOT x -> h");
+  day07_process_line(&m, "NOT y -> i");
   TEST_CHECK(d7_eval_var(&m, "d") == 72);
   TEST_CHECK(d7_eval_var(&m, "e") == 507);
   TEST_CHECK(d7_eval_var(&m, "f") == 492);
@@ -280,6 +281,31 @@ void test_day07(void) {
   TEST_CHECK(d7_eval_var(&m, "x") == 123);
   TEST_CHECK(d7_eval_var(&m, "y") == 456);
   d7_machine_free(&m);
+}
+
+void test_day08(void) {
+  {
+    d8_result r = d8_process_line("\"\"");
+    TEST_CHECK(r.char_count == 0);
+    TEST_CHECK(r.code_count == 2);
+  }
+  {
+    d8_result r = d8_process_line("\"abc\"");
+    TEST_CHECK(r.char_count == 3);
+    TEST_CHECK(r.code_count == 5);
+  }
+  {
+    d8_result r = d8_process_line("\"aaa\\\"aaa\"");
+    TEST_CHECK(r.char_count == 7);
+    TEST_MSG("%d", r.char_count);
+    TEST_CHECK(r.code_count == 10);
+    TEST_MSG("%d", r.code_count);
+  }
+  {
+    d8_result r = d8_process_line("\"\\x27\"");
+    TEST_CHECK(r.char_count == 1);
+    TEST_CHECK(r.code_count == 6);
+  }
 }
 
 TEST_LIST = {
@@ -296,5 +322,6 @@ TEST_LIST = {
     {"test day 5", test_day05},
     {"test day 6", test_day06},
     {"test day 7", test_day07},
+    {"test day 8", test_day08},
 
     {NULL, NULL}};

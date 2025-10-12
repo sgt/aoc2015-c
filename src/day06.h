@@ -3,6 +3,7 @@
 #include "common.h"
 #include "data_structures.h"
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 bs_range_op parse_cmd(char *cmd) {
@@ -13,12 +14,12 @@ bs_range_op parse_cmd(char *cmd) {
   return CLEAR;
 }
 
-void day06_perform_cmd(uint8_t *arr, solution_part part, char *cmd,
-                       uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
-  auto op = parse_cmd(cmd);
-  for (auto y = y1; y <= y2; ++y) {
-    for (auto x = x1; x <= x2; ++x) {
-      auto elem = arr + x + y * 1000;
+void day06_perform_cmd(uint8_t *arr, solution_part part, char *cmd, uint16_t x1,
+                       uint16_t y1, uint16_t x2, uint16_t y2) {
+  bs_range_op op = parse_cmd(cmd);
+  for (size_t y = y1; y <= y2; ++y) {
+    for (size_t x = x1; x <= x2; ++x) {
+      uint8_t *elem = arr + x + y * 1000;
       switch (op) {
       case SET:
         if (part == PART1) {
@@ -48,7 +49,7 @@ void day06_perform_cmd(uint8_t *arr, solution_part part, char *cmd,
 
 int32_t day06_total(uint8_t *arr) {
   uint32_t result = 0;
-  for (auto i = 0; i < 1000 * 1000; ++i) {
+  for (size_t i = 0; i < 1000 * 1000; ++i) {
     result += arr[i];
   }
   return result;
