@@ -288,23 +288,25 @@ void test_day08(void) {
     d8_result r = d8_process_line("\"\"");
     TEST_CHECK(r.char_count == 0);
     TEST_CHECK(r.code_count == 2);
+    TEST_CHECK(r.rep_count == 6);
   }
   {
     d8_result r = d8_process_line("\"abc\"");
     TEST_CHECK(r.char_count == 3);
     TEST_CHECK(r.code_count == 5);
+    TEST_CHECK(r.rep_count == 9);
   }
   {
     d8_result r = d8_process_line("\"aaa\\\"aaa\"");
     TEST_CHECK(r.char_count == 7);
-    TEST_MSG("%d", r.char_count);
     TEST_CHECK(r.code_count == 10);
-    TEST_MSG("%d", r.code_count);
+    TEST_CHECK(r.rep_count == 16);
   }
   {
     d8_result r = d8_process_line("\"\\x27\"");
     TEST_CHECK(r.char_count == 1);
     TEST_CHECK(r.code_count == 6);
+    TEST_CHECK(r.rep_count == 11);
   }
 }
 
