@@ -21,7 +21,7 @@ void arr_push_str(char **arr, char *s) {
 }
 
 char *d10_look_and_say(char *s) {
-  char buf[1024];
+  char *buf = malloc(1024*1024);
   char *result = NULL;
   usize i = 0;
   while (s[i] != '\0') {
@@ -32,18 +32,21 @@ char *d10_look_and_say(char *s) {
     i += repetitions;
   }
   arr_push(result, '\0');
+  free(buf);
   return result;
 }
 
 usize day10(const solution_part part) {
-  char input[1024 * 1024 * 7];
+  char *input = malloc(1024 * 1024 * 8);
   strcpy(input, PUZZLE_INPUT);
   for (int i = 0; i < (part == PART1 ? 40 : 50); ++i) {
     char *s = d10_look_and_say(input);
     strcpy(input, s);
     arr_free(s);
   }
-  return strlen(input);
+  usize result = strlen(input);
+  free(input);
+  return result;
 }
 
 usize day10_part1() { return day10(PART1); }
