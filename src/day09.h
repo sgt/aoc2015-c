@@ -58,10 +58,10 @@ void d9_process_line(d9_state *state, const char *line) {
   d9_add_distance(state, n1, n2, distance);
 }
 
-inline bool d9_has_city(int mask, u8 city) { return mask & (1 << city); }
-inline int d9_remove_city(int mask, u8 city) { return mask & ~(1 << city); }
+bool d9_has_city(int mask, u8 city) { return mask & (1 << city); }
+int d9_remove_city(int mask, u8 city) { return mask & ~(1 << city); }
 
-inline int d9_full_mask(const d9_state *state) {
+int d9_full_mask(const d9_state *state) {
   return (1 << state->cities_count) - 1;
 }
 
