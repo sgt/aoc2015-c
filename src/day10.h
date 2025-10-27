@@ -36,11 +36,10 @@ char *d10_look_and_say(char *s) {
 }
 
 usize day10(const solution_part part) {
-  char input[1024*1024];
+  char input[1024 * 1024 * 7];
   strcpy(input, PUZZLE_INPUT);
-  for (int i = 0; i < 40; ++i) {
+  for (int i = 0; i < (part == PART1 ? 40 : 50); ++i) {
     char *s = d10_look_and_say(input);
-    printf("%d %zu\n", i, strlen(s));
     strcpy(input, s);
     arr_free(s);
   }
