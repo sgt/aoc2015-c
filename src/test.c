@@ -7,6 +7,7 @@
 #include "day07.h"
 #include "day08.h"
 #include "day09.h"
+#include "day10.h"
 #include <stdint.h>
 
 #define TEST_DYN_ARRAY(type)                                                   \
@@ -312,14 +313,28 @@ void test_day08(void) {
 }
 
 void test_day09(void) {
-
   d9_state state = d9_init_state();
   d9_process_line(&state, "London to Dublin = 464");
   d9_process_line(&state, "London to Belfast = 518");
   d9_process_line(&state, "Dublin to Belfast = 141");
   TEST_CHECK(d9_held_karp(&state, PART1) == 605);
   TEST_CHECK(d9_held_karp(&state, PART2) == 982);
-  TEST_MSG("%d\n", d9_held_karp(&state,PART2));
+  TEST_MSG("%d\n", d9_held_karp(&state, PART2));
+}
+
+void test_day10_helper(char *input, char *expected) {
+  char *s = d10_look_and_say(input);
+  TEST_CHECK(strcmp(s, expected) == 0);
+  TEST_MSG("%s", s);
+  arr_free(s);
+}
+
+void test_day10(void) {
+  test_day10_helper("1", "11");
+  test_day10_helper("11", "21");
+  test_day10_helper("21", "1211");
+  test_day10_helper("1211", "111221");
+  test_day10_helper("111221", "312211");
 }
 
 TEST_LIST = {
@@ -338,5 +353,6 @@ TEST_LIST = {
     {"test day 7", test_day07},
     {"test day 8", test_day08},
     {"test day 9", test_day09},
+    {"test day 10", test_day10},
 
     {NULL, NULL}};

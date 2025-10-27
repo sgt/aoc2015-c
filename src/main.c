@@ -13,6 +13,7 @@
 #include "day07.h"
 #include "day08.h"
 #include "day09.h"
+#include "day10.h"
 
 int main(const int argc, const char *argv[]) {
   if (argc != 2) {
@@ -63,6 +64,10 @@ int main(const int argc, const char *argv[]) {
   case 9:
     printf("9.1: %d\n", day9_part1());
     printf("9.2: %d\n", day9_part2());
+    break;
+  case 10:
+    printf("10.1: %zu\n", day10_part1());
+    printf("10.2: %zu\n", day10_part2());
     break;
   default:
     printf("there is no problem #%d\n", n);

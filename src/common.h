@@ -22,6 +22,14 @@
 #define strdup _strdup
 #endif
 
+#ifndef min
+#define min(a, b) (((a) < (b)) ? (a) : (b))
+#endif
+
+#ifndef max
+#define max(a, b) (((a) > (b)) ? (a) : (b))
+#endif
+
 #define min3(a, b, c) min(a, min(b, c))
 
 typedef enum { PART1, PART2 } solution_part;
