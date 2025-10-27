@@ -6,6 +6,22 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define i8 int8_t
+#define u8 uint8_t
+#define i16 int16_t
+#define u16 uint16_t
+#define i32 int32_t
+#define u32 uint32_t
+#define i64 int64_t
+#define u64 uint64_t
+#define usize size_t
+#define isize ptrdiff_t
+
+#ifdef _WIN32
+#define _CRT_SECURE_NO_WARNINGS 1
+#define strdup _strdup
+#endif
+
 #define min3(a, b, c) min(a, min(b, c))
 
 typedef enum { PART1, PART2 } solution_part;

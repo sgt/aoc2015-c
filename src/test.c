@@ -6,6 +6,7 @@
 #include "day06.h"
 #include "day07.h"
 #include "day08.h"
+#include "day09.h"
 #include <stdint.h>
 
 #define TEST_DYN_ARRAY(type)                                                   \
@@ -310,6 +311,17 @@ void test_day08(void) {
   }
 }
 
+void test_day09(void) {
+
+  d9_state state = d9_init_state();
+  d9_process_line(&state, "London to Dublin = 464");
+  d9_process_line(&state, "London to Belfast = 518");
+  d9_process_line(&state, "Dublin to Belfast = 141");
+  TEST_CHECK(d9_held_karp(&state, PART1) == 605);
+  TEST_CHECK(d9_held_karp(&state, PART2) == 982);
+  TEST_MSG("%d\n", d9_held_karp(&state,PART2));
+}
+
 TEST_LIST = {
     {"dynamic array", test_dynamic_array},
     {"test hashtable duplication", test_hashtable_duplication},
@@ -325,5 +337,6 @@ TEST_LIST = {
     {"test day 6", test_day06},
     {"test day 7", test_day07},
     {"test day 8", test_day08},
+    {"test day 9", test_day09},
 
     {NULL, NULL}};

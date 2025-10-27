@@ -43,3 +43,11 @@ Turns out bitset is useless for part two, so I rewrote it to use a regular 2d ar
 ### Day 7
 
 Had to implement a hashtable with strings as keys, as well as an arena allocator. The whole thing with reimplementation of primitive data structures is becoming a bit tedious to be honest, maybe I'll switch to third-party libraries soon (or not).
+
+### Day 8
+
+This problem is just silly.
+
+### Day 9
+
+Traveling salesman for a small number of nodes calls for simple data structures, like lookups in an array.

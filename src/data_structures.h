@@ -9,11 +9,7 @@ For examples of usage, see test.c
 
 #pragma once
 
-#ifdef _WIN32
-#define _CRT_SECURE_NO_WARNINGS 1
-#define strdup _strdup
-#endif
-
+#include "common.h"
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -294,7 +290,7 @@ uint64_t hash_string(const char *data) {
 #define sht_free(arr)                                                          \
   do {                                                                         \
     if (arr) {                                                                 \
-      for (size_t i = 0; i < sht_size(arr); ++i) {                               \
+      for (size_t i = 0; i < sht_size(arr); ++i) {                             \
         free(arr[i].key);                                                      \
       }                                                                        \
       _HTBucketsHeader *b_hdr = (_arr_header(arr))->hashtable;                 \
