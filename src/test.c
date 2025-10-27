@@ -320,6 +320,7 @@ void test_day09(void) {
   TEST_CHECK(d9_held_karp(&state, PART1) == 605);
   TEST_CHECK(d9_held_karp(&state, PART2) == 982);
   TEST_MSG("%d\n", d9_held_karp(&state, PART2));
+  d9_free_state(state);
 }
 
 void test_day10_helper(char *input, char *expected) {
