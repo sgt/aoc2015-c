@@ -9,6 +9,7 @@
 #include "day09.h"
 #include "day10.h"
 #include "day11.h"
+#include "day12.h"
 #include <stdint.h>
 
 #define TEST_DYN_ARRAY(type)                                                   \
@@ -369,6 +370,16 @@ void test_day11(void) {
   test_day11_next_valid_pw("ghijklmn", "ghjaabcc");
 }
 
+void test_day12(void) {
+  d12_num_finder finder = d12_init_num_finder("bla12foo-145meow");
+  int n = -1;
+  TEST_CHECK(d12_next_num(&finder, &n));
+  TEST_CHECK(n == 12);
+  TEST_CHECK(d12_next_num(&finder, &n));
+  TEST_CHECK(n == -145);
+  TEST_CHECK(!d12_next_num(&finder, &n));
+}
+
 TEST_LIST = {
     {"dynamic array", test_dynamic_array},
     {"test hashtable duplication", test_hashtable_duplication},
@@ -387,5 +398,6 @@ TEST_LIST = {
     {"test day 9", test_day09},
     {"test day 10", test_day10},
     {"test day 11", test_day11},
+    {"test day 12", test_day12},
 
     {NULL, NULL}};
