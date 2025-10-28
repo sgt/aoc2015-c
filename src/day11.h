@@ -29,23 +29,19 @@ bool d11_is_valid_pw(const char *s) {
       return false;
     }
 
-    if (i >= 2 && s[i - 1] == s[i] - 1 && s[i - 2] == s[i] - 2) {
+    if (!three_sequential_encountered && i >= 2 && s[i - 1] == s[i] - 1 && s[i - 2] == s[i] - 2) {
       three_sequential_encountered = true;
     }
 
-    if (i >= 1 && s[i] == s[i - 1]) {
+    if (!two_doubles_encountered && i >= 1 && s[i] == s[i - 1]) {
       if (prev_double_encountered == -1) {
         prev_double_encountered = i;
       } else if (prev_double_encountered < (i - 1)) {
         two_doubles_encountered = true;
       }
     }
-
-    if (three_sequential_encountered && two_doubles_encountered) {
-      return true;
-    }
   }
-  return false;
+  return three_sequential_encountered && two_doubles_encountered;
 }
 
 void d11_next_valid(char *pw) {
