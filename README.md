@@ -10,6 +10,7 @@ $ just run <day-number>
 ### Credits
 - Unit testing: https://github.com/mity/acutest
 - md5: https://github.com/Zunawe/md5-c
+- json: https://github.com/sheredom/json.h
 
 ## Writeup
 
@@ -51,3 +52,15 @@ This problem is just silly.
 ### Day 9
 
 Traveling salesman for a small number of nodes calls for simple data structures, like lookups in an array.
+
+### Day 10
+
+Just brute-forcing through it works, not using the Conway constant here.
+
+### Day 11
+
+Same, brute-forcing is fast enough, no smart heuristics here.
+
+### Day 12
+
+First part is easy to implement with handmade parser, second part is too tedious without parsing json properly, using a third-party lib here.

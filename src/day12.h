@@ -1,9 +1,11 @@
 #pragma once
 
+#include "../thirdparty/json.h"
 #include "common.h"
 #include <assert.h>
 #include <ctype.h>
 #include <string.h>
+
 
 typedef struct {
   const char *input;
@@ -14,9 +16,7 @@ d12_num_finder d12_init_num_finder(const char *s) {
   return (d12_num_finder){.input = s, .idx = 0};
 }
 
-bool d12_isnumchar(int c) {
-  return c == '-' || isdigit(c);
-}
+bool d12_isnumchar(int c) { return c == '-' || isdigit(c); }
 
 bool d12_next_num(d12_num_finder *finder, int *num) {
   while (!d12_isnumchar(finder->input[finder->idx]) &&
@@ -51,15 +51,24 @@ int day12(const solution_part part) {
     perror("error reading file");
     return -1;
   }
+  fclose(f);
 
   int sum = 0;
-  d12_num_finder finder = d12_init_num_finder(line);
-  int n;
-  while (d12_next_num(&finder, &n)) {
-    sum += n;
+
+  switch (part) {
+  case PART1:
+    // using custom parser
+    d12_num_finder finder = d12_init_num_finder(line);
+    int n;
+    while (d12_next_num(&finder, &n)) {
+      sum += n;
+    }
+    break;
+  case PART2:
+    // using third-party json parser
+    break;
   }
 
-  fclose(f);
   return sum;
 }
 
