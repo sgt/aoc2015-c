@@ -58,6 +58,10 @@ void d11_next_valid(char *pw) {
 char *day11(const solution_part part) {
   char *pw = strdup(D11_PUZZLE_INPUT);
   d11_next_valid(pw);
+  if (part == PART1)
+    return pw;
+  d11_increase_pw(pw);
+  d11_next_valid(pw);
   return pw;
 }
 
