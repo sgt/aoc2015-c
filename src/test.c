@@ -8,6 +8,7 @@
 #include "day08.h"
 #include "day09.h"
 #include "day10.h"
+#include "day11.h"
 #include <stdint.h>
 
 #define TEST_DYN_ARRAY(type)                                                   \
@@ -323,7 +324,7 @@ void test_day09(void) {
   d9_free_state(state);
 }
 
-void test_day10_helper(char *input, char *expected) {
+void test_day10_helper(const char *input, const char *expected) {
   char *s = d10_look_and_say(input);
   TEST_CHECK(strcmp(s, expected) == 0);
   TEST_MSG("%s", s);
@@ -336,6 +337,36 @@ void test_day10(void) {
   test_day10_helper("21", "1211");
   test_day10_helper("1211", "111221");
   test_day10_helper("111221", "312211");
+}
+
+void test_day11_increase_pw_helper(const char *input, const char *expected) {
+  char *actual = strdup(input);
+  d11_increase_pw(actual);
+  TEST_CHECK(strcmp(actual, expected) == 0);
+  free(actual);
+}
+
+void test_day11_next_valid_pw(const char *input, const char *expected) {
+  char *actual = strdup(input);
+  d11_next_valid(actual);
+  TEST_CHECK(strcmp(actual, expected) == 0);
+  free(actual);
+}
+
+void test_day11(void) {
+  test_day11_increase_pw_helper("ab", "ac");
+  test_day11_increase_pw_helper("xz", "ya");
+  test_day11_increase_pw_helper("xzzz", "yaaa");
+  test_day11_increase_pw_helper("abczzz", "abdaaa");
+
+  TEST_CHECK(!d11_is_valid_pw("hijklmmn"));
+  TEST_CHECK(!d11_is_valid_pw("abbceffg"));
+  TEST_CHECK(!d11_is_valid_pw("abbcegjk"));
+  TEST_CHECK(d11_is_valid_pw("abcdffaa"));
+  TEST_CHECK(d11_is_valid_pw("ghjaabcc"));
+
+  test_day11_next_valid_pw("abcdefgh", "abcdffaa");
+  test_day11_next_valid_pw("ghijklmn", "ghjaabcc");
 }
 
 TEST_LIST = {
@@ -355,5 +386,6 @@ TEST_LIST = {
     {"test day 8", test_day08},
     {"test day 9", test_day09},
     {"test day 10", test_day10},
+    {"test day 11", test_day11},
 
     {NULL, NULL}};
