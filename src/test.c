@@ -243,6 +243,17 @@ void test_arena(void) {
   TEST_CHECK(arena.data == NULL);
 }
 
+void test_strpool(void) {
+  strpool pool = strpool_init();
+  TEST_CHECK(strpool_idx(&pool, "foo") == 0);
+  TEST_CHECK(strpool_idx(&pool, "bar") == 1);
+  TEST_CHECK(strpool_idx(&pool, "foo") == 0);
+  TEST_CHECK(strpool_idx(&pool, "baz") == 2);
+  TEST_CHECK(strpool_idx(&pool, "foo") == 0);
+  TEST_CHECK(strpool_len(&pool) == 3);
+  strpool_free(&pool);
+}
+
 void test_day05(void) {
   TEST_CHECK(is_nice("ugknbfddgicrmopn"));
   TEST_CHECK(is_nice("aaa"));
@@ -394,6 +405,7 @@ TEST_LIST = {
     {"test string hashtable growth", test_string_hashtable_growth},
     {"test bitset", test_bitset},
     {"test bitset ranges", test_bitset_ranges},
+    {"test strpool", test_strpool},
 
     {"test arena", test_arena},
 

@@ -1,49 +1,31 @@
 #pragma once
 
 #include "common.h"
+#include "data_structures.h"
 #include <limits.h>
 #include <stdint.h>
 
 #define D9_MAX_CITIES 8
 
 typedef struct {
-  u8 cities_count;
-  char *cities[D9_MAX_CITIES];
+  strpool cities;
 
   u16 dist[D9_MAX_CITIES][D9_MAX_CITIES];
   u16 dp[1 << D9_MAX_CITIES][D9_MAX_CITIES];
 } d9_state;
 
 d9_state d9_init_state(void) {
-  return (d9_state){.cities_count = 0, .dist = {0}};
-}
-
-// Return city's index, adding a new city if absent from index.
-usize d9_city_index(d9_state *state, const char *s) {
-  for (u8 i = 0; i < state->cities_count; ++i) {
-    if (strcmp(s, state->cities[i]) == 0) {
-      return i;
-    }
-  }
-  if (state->cities_count == D9_MAX_CITIES) {
-    fprintf(stderr, "attempting to add more than max cities, aborting");
-    exit(1);
-  }
-  state->cities[state->cities_count] = strdup(s);
-  state->cities_count++;
-  return state->cities_count - 1;
+  return (d9_state){.cities = strpool_init(), .dist = {0}};
 }
 
 void d9_free_state(d9_state state) {
-  for (usize i = 0; i < state.cities_count; i++) {
-    free(state.cities[i]);
-  }
+  strpool_free(&state.cities);
 }
 
 void d9_add_distance(d9_state *state, const char *s1, const char *s2,
                      u16 distance) {
-  usize i1 = d9_city_index(state, s1);
-  usize i2 = d9_city_index(state, s2);
+  usize i1 = strpool_idx(&state->cities, s1);
+  usize i2 = strpool_idx(&state->cities, s2);
   state->dist[i1][i2] = distance;
   state->dist[i2][i1] = distance;
 }
@@ -62,25 +44,26 @@ bool d9_has_city(int mask, u8 city) { return mask & (1 << city); }
 int d9_remove_city(int mask, u8 city) { return mask & ~(1 << city); }
 
 int d9_full_mask(const d9_state *state) {
-  return (1 << state->cities_count) - 1;
+  return (1 << strpool_len(&state->cities)) - 1;
 }
 
 u16 d9_held_karp(d9_state *state, const solution_part part) {
   int full_mask = d9_full_mask(state);
+  usize cities_count = strpool_len(&state->cities);
 
   // init dp array
   for (int mask = 0; mask <= full_mask; ++mask) {
-    for (u8 city = 0; city < state->cities_count; ++city) {
+    for (u8 city = 0; city < cities_count; ++city) {
       state->dp[mask][city] =
           mask == (1 << city) ? 0 : (part == PART1 ? UINT16_MAX : 0);
     }
   }
 
   for (int mask = 1; mask <= full_mask; ++mask) {
-    for (u8 city = 0; city < state->cities_count; ++city) {
+    for (u8 city = 0; city < cities_count; ++city) {
       if (!d9_has_city(mask, city))
         continue;
-      for (u8 prev_city = 0; prev_city < state->cities_count; ++prev_city) {
+      for (u8 prev_city = 0; prev_city < cities_count; ++prev_city) {
         if (prev_city == city || !d9_has_city(mask, prev_city))
           continue;
         int prev_mask = d9_remove_city(mask, city);
@@ -95,7 +78,7 @@ u16 d9_held_karp(d9_state *state, const solution_part part) {
   }
 
   u16 result = part == PART1 ? UINT16_MAX : 0;
-  for (u8 city = 0; city < state->cities_count; ++city) {
+  for (u8 city = 0; city < cities_count; ++city) {
     result = part == PART1 ? min(result, state->dp[full_mask][city])
                            : max(result, state->dp[full_mask][city]);
   }
