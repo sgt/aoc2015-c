@@ -378,6 +378,12 @@ void test_day12(void) {
   TEST_CHECK(d12_next_num(&finder, &n));
   TEST_CHECK(n == -145);
   TEST_CHECK(!d12_next_num(&finder, &n));
+
+  TEST_CHECK(d12_sum_non_red("{}") == 0);
+  TEST_CHECK(d12_sum_non_red("{\"a\":[1,2,3]}") == 6);
+  TEST_CHECK(d12_sum_non_red("{\"a\":[1,2,3], \"b\":\"red\"}") == 0);
+  TEST_CHECK(d12_sum_non_red("{\"a\":[1,2,3], \"b\":-12}") == -6);
+  TEST_CHECK(d12_sum_non_red("{\"a\":[1,2,3], \"b\":-12}") == -6);
 }
 
 TEST_LIST = {

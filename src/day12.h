@@ -6,7 +6,6 @@
 #include <ctype.h>
 #include <string.h>
 
-
 typedef struct {
   const char *input;
   usize idx;
@@ -38,6 +37,56 @@ bool d12_next_num(d12_num_finder *finder, int *num) {
   return true;
 }
 
+bool d12_is_red(const struct json_object_s *obj) {
+  for (struct json_object_element_s *e = obj->start; e != NULL; e = e->next) {
+    struct json_string_s *val = json_value_as_string(e->value);
+    if (val != NULL && strcmp(val->string, "red") == 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
+int d12_sum_arr(const struct json_array_s *);
+int d12_sum_obj(const struct json_object_s *);
+
+int d12_sum_val(struct json_value_s *val) {
+  switch (val->type) {
+  case json_type_object:
+    return d12_sum_obj(json_value_as_object(val));
+  case json_type_array:
+    return d12_sum_arr(json_value_as_array(val));
+  case json_type_number:
+    return atoi(json_value_as_number(val)->number);
+  default: // do nothing
+    return 0;
+  }
+}
+
+int d12_sum_arr(const struct json_array_s *arr) {
+  int sum = 0;
+  for (struct json_array_element_s *e = arr->start; e != NULL; e = e->next) {
+    sum += d12_sum_val(e->value);
+  }
+  return sum;
+}
+
+int d12_sum_obj(const struct json_object_s *obj) {
+  if (d12_is_red(obj))
+    return 0;
+
+  int sum = 0;
+  for (struct json_object_element_s *e = obj->start; e != NULL; e = e->next) {
+    sum += d12_sum_val(e->value);
+  }
+  return sum;
+}
+
+int d12_sum_non_red(const char *s) {
+  struct json_value_s *root = json_parse(s, strlen(s));
+  return d12_sum_obj((struct json_object_s *)root->payload);
+}
+
 int day12(const solution_part part) {
 
   FILE *f = fopen("data/input12.txt", "r");
@@ -66,6 +115,7 @@ int day12(const solution_part part) {
     break;
   case PART2:
     // using third-party json parser
+    return d12_sum_non_red(line);
     break;
   }
 
