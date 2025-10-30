@@ -64,3 +64,11 @@ Same, brute-forcing is fast enough, no smart heuristics here.
 ### Day 12
 
 First part is easy to implement with handmade parser, second part is too tedious without parsing json properly, using a third-party lib here.
+
+### Day 13
+
+Calculating permutations using Heap's algorithm. Could enhance it to discard circularly equivalent permutations, but it's fast enough as it is.
+
+### Day 14
+
+Pretty straightforward.

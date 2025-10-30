@@ -11,6 +11,7 @@
 #include "day11.h"
 #include "day12.h"
 #include "day13.h"
+#include "day14.h"
 #include <stdint.h>
 
 #define TEST_DYN_ARRAY(type)                                                   \
@@ -429,6 +430,13 @@ void test_day13(void) {
   TEST_MSG("part1 result %d", state.max_happiness);
 }
 
+void test_day14(void) {
+  d14_deer deer1 = {.fly_speed = 14, .fly_time = 10, .rest_time = 127};
+  d14_deer deer2 = {.fly_speed = 16, .fly_time = 11, .rest_time = 162};
+  TEST_CHECK(d14_distance_traveled(deer1, 1000) == 1120);
+  TEST_CHECK(d14_distance_traveled(deer2, 1000) == 1056);
+}
+
 TEST_LIST = {
     {"dynamic array", test_dynamic_array},
     {"test hashtable duplication", test_hashtable_duplication},
@@ -450,5 +458,6 @@ TEST_LIST = {
     {"test day 11", test_day11},
     {"test day 12", test_day12},
     {"test day 13", test_day13},
+    {"test day 14", test_day14},
 
     {NULL, NULL}};
