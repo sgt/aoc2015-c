@@ -10,6 +10,7 @@
 #include "day10.h"
 #include "day11.h"
 #include "day12.h"
+#include "day13.h"
 #include <stdint.h>
 
 #define TEST_DYN_ARRAY(type)                                                   \
@@ -397,6 +398,37 @@ void test_day12(void) {
   TEST_CHECK(d12_sum_non_red("{\"a\":[1,2,3], \"b\":-12}") == -6);
 }
 
+void test_day13(void) {
+  d13_state state = d13_init_state();
+  d13_process_line(
+      &state, "Alice would gain 54 happiness units by sitting next to Bob.");
+  d13_process_line(
+      &state, "Alice would lose 79 happiness units by sitting next to Carol.");
+  d13_process_line(
+      &state, "Alice would lose 2 happiness units by sitting next to David.");
+  d13_process_line(
+      &state, "Bob would gain 83 happiness units by sitting next to Alice.");
+  d13_process_line(
+      &state, "Bob would lose 7 happiness units by sitting next to Carol.");
+  d13_process_line(
+      &state, "Bob would lose 63 happiness units by sitting next to David.");
+  d13_process_line(
+      &state, "Carol would lose 62 happiness units by sitting next to Alice.");
+  d13_process_line(
+      &state, "Carol would gain 60 happiness units by sitting next to Bob.");
+  d13_process_line(
+      &state, "Carol would gain 55 happiness units by sitting next to David.");
+  d13_process_line(
+      &state, "David would gain 46 happiness units by sitting next to Alice.");
+  d13_process_line(
+      &state, "David would lose 7 happiness units by sitting next to Bob.");
+  d13_process_line(
+      &state, "David would gain 41 happiness units by sitting next to Carol.");
+  d13_permute(&state, strpool_len(&state.pool), d13_process);
+  TEST_CHECK(state.max_happiness == 330);
+  TEST_MSG("part1 result %d", state.max_happiness);
+}
+
 TEST_LIST = {
     {"dynamic array", test_dynamic_array},
     {"test hashtable duplication", test_hashtable_duplication},
@@ -417,5 +449,6 @@ TEST_LIST = {
     {"test day 10", test_day10},
     {"test day 11", test_day11},
     {"test day 12", test_day12},
+    {"test day 13", test_day13},
 
     {NULL, NULL}};
